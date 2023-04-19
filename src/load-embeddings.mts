@@ -11,7 +11,7 @@ import { TaskQueue } from "./task-queue.mjs";
 const egwEmbeddingsPath = "embeddings/egw";
 const bibleEmbeddingsPath = "embeddings/bible";
 
-const Queue = new TaskQueue();
+export const Queue = new TaskQueue();
 
 export function getEgwEmbeddings() {
   return Queue.add("egw", () =>

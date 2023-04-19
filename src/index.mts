@@ -4,6 +4,7 @@ import { Result } from "ftld";
 import * as z from "zod";
 
 import {
+  Queue,
   getBibleEmbeddings,
   getEgwEmbeddings,
   search,
@@ -31,8 +32,14 @@ export const fastify = Fastify({
 export const log = fastify.log;
 
 // Declare a health check route
-fastify.get("/", async (request, reply) => {
-  return { status: "ok" };
+fastify.get("/health", async (request, reply) => {
+  if (
+    Queue.getStatus("egw") !== undefined ||
+    Queue.getStatus("bible") !== undefined
+  ) {
+    return reply.send({ ok: false }).status(102);
+  }
+  return reply.send({ ok: true }).status(200);
 });
 
 const schemaToResult =
