@@ -15,7 +15,7 @@ import { TaskQueue } from "./task-queue.mjs";
 const egwEmbeddingsPath = "embeddings/egw";
 const bibleEmbeddingsPath = "embeddings/bible";
 
-export const Queue = new TaskQueue();
+const Queue = new TaskQueue();
 
 let egwEmbeddings:
   | Result<
@@ -30,7 +30,7 @@ let bibleEmbeddings:
     >
   | undefined;
 
-export async function getEgwEmbeddings() {
+async function getEgwEmbeddings() {
   if (egwEmbeddings) return egwEmbeddings;
   return Queue.add("egw", () =>
     Github.getDir<LabeledEmbedding[]>(egwEmbeddingsPath)
@@ -43,7 +43,15 @@ export async function getEgwEmbeddings() {
   );
 }
 
-export async function getBibleEmbeddings() {
+function isLoading() {
+  return Boolean(Queue.getStatus("egw") || Queue.getStatus("bible"));
+}
+
+function preload() {
+  Task.sequential([getEgwEmbeddings, getBibleEmbeddings]).run();
+}
+
+async function getBibleEmbeddings() {
   if (bibleEmbeddings) return bibleEmbeddings;
   return Queue.add("bible", () =>
     Github.getDir<
@@ -76,7 +84,7 @@ export async function getBibleEmbeddings() {
   );
 }
 
-export function search(query: string) {
+function search(query: string) {
   return OpenAI.embed(query)
     .flatMap((embedding) =>
       Task.sequential([getEgwEmbeddings, getBibleEmbeddings]).map((results) => {
@@ -110,6 +118,12 @@ export function search(query: string) {
       }));
     });
 }
+
+export const BibleTools = {
+  search,
+  isLoading,
+  preload,
+};
 
 const settingPrompt = `You are a helpful assistant to a Seventh Day Adventist bible student. Please help them find the answer to their question.`;
 const relatedBiblicalTextsPrompt = (

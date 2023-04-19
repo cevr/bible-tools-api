@@ -1,14 +1,9 @@
 import "dotenv/config";
 import Fastify from "fastify";
-import { Result, Task } from "ftld";
+import { Result } from "ftld";
 import * as z from "zod";
 
-import {
-  Queue,
-  getBibleEmbeddings,
-  getEgwEmbeddings,
-  search,
-} from "./load-embeddings.mjs";
+import { BibleTools } from "./load-embeddings.mjs";
 
 import { env } from "./env.mjs";
 
@@ -37,10 +32,7 @@ fastify.get("/", (request, reply) => {
 
 // Declare a health check route
 fastify.get("/health", async (request, reply) => {
-  if (
-    Queue.getStatus("egw") !== undefined &&
-    Queue.getStatus("bible") !== undefined
-  ) {
+  if (BibleTools.isLoading()) {
     return reply.send({ ok: false }).status(102);
   }
   return reply.send({ ok: true }).status(200);
@@ -65,7 +57,7 @@ const searchSchema = schemaToResult(
 fastify.get("/search", async (req, reply) => {
   await searchSchema(req.query)
     .toTask()
-    .flatMap(({ q }) => search(q))
+    .flatMap(({ q }) => BibleTools.search(q))
     .match({
       Ok: (data) => {
         log.info(data);
@@ -94,6 +86,6 @@ fastify.listen(
       process.exit(1);
     }
     fastify.log.info("Loading embeddings...");
-    Task.sequential([getEgwEmbeddings, getBibleEmbeddings]).run();
+    BibleTools.preload();
   }
 );
