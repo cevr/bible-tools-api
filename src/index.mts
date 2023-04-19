@@ -59,12 +59,13 @@ const searchSchema = schemaToResult(
 );
 
 fastify.get("/search", async (req, reply) => {
-  return searchSchema(req.query)
+  await searchSchema(req.query)
     .toTask()
     .flatMap(({ q }) => search(q))
     .match({
       Ok: (data) => {
-        reply.send(data);
+        log.info(data);
+        reply.send(data).status(200);
       },
       Err: (err) => {
         log.error(err);
