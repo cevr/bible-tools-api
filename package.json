@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsup --format cjs src/index.mts",
     "dev": "tsx watch src/index.mts --clear-screen=false",
-    "start": "node dist/index.js"
+    "start": "node --max-old-space-size=4096 dist/index.js"
   },
   "keywords": [],
   "author": "",
