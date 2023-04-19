@@ -77,12 +77,57 @@ export async function getBibleEmbeddings() {
 }
 
 export function search(query: string) {
-  return OpenAI.embed(query).flatMap((embedding) =>
-    Task.sequential([getEgwEmbeddings, getBibleEmbeddings]).map((results) => {
-      return {
-        egw: compareEmbeddingToMultipleSets(embedding, results[0], 0.8, 5),
-        bible: compareEmbeddingToMultipleSets(embedding, results[1], 0.8, 5),
-      };
-    })
-  );
+  return OpenAI.embed(query)
+    .flatMap((embedding) =>
+      Task.sequential([getEgwEmbeddings, getBibleEmbeddings]).map((results) => {
+        return {
+          egw: compareEmbeddingToMultipleSets(embedding, results[0], 0.8, 5),
+          bible: compareEmbeddingToMultipleSets(embedding, results[1], 0.8, 5),
+        };
+      })
+    )
+    .flatMap((results) => {
+      return OpenAI.chat([
+        {
+          role: "system",
+          content: settingPrompt,
+        },
+        {
+          role: "system",
+          content: relatedBiblicalTextsPrompt(results.bible),
+        },
+        {
+          role: "system",
+          content: relatedEGWTextsPrompt(results.egw),
+        },
+        {
+          role: "user",
+          content: query,
+        },
+      ]).map((content) => ({
+        ...results,
+        answer: content,
+      }));
+    });
 }
+
+const settingPrompt = `You are a helpful assistant to a Seventh Day Adventist bible student. Please help them find the answer to their question.`;
+const relatedBiblicalTextsPrompt = (
+  relatedTexts: {
+    source: string;
+    label: string;
+  }[]
+) =>
+  `Here are some related biblical texts that may help you answer the question: ${relatedTexts
+    .map((text) => text.source + " (" + text.label + ")")
+    .join(", ")}`;
+
+const relatedEGWTextsPrompt = (
+  relatedTexts: {
+    source: string;
+    label: string;
+  }[]
+) =>
+  `Here are some related texts from the author Ellen G. White that may help you answer the question: ${relatedTexts
+    .map((text) => text.source + " (" + text.label + ")")
+    .join(", ")}`;

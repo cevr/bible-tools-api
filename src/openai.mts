@@ -35,6 +35,42 @@ function embed(text: string): Task<OpenAIEmbedFailedError, Embedding> {
   );
 }
 
+type Message = {
+  role: "user" | "system";
+  content: string;
+};
+
+class OpenAIChatFailedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OpenAIChatFailedError";
+  }
+}
+
+function chat(messages: Message[]) {
+  return Task.from(
+    () =>
+      request("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages,
+        }),
+      })
+        .then((res) => res.body.json())
+        .then((res) => res.choices[0].message.content as string),
+    (e) => {
+      log.error(e);
+      return new OpenAIChatFailedError("Could not connect to OpenAI API");
+    }
+  );
+}
+
 export const OpenAI = {
   embed,
+  chat,
 };
