@@ -6,6 +6,7 @@ const envSchema = z.object({
     .enum(["development", "production", "test"])
     .optional()
     .default("development"),
+  PORT: z.number().optional().default(3000),
 });
 
 export type Env = z.infer<typeof envSchema>;
