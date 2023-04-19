@@ -68,7 +68,7 @@ function getDir<T>(path: string) {
 
   let count = 0;
   return files.flatMap((files) =>
-    Task.parallel(
+    Task.sequential(
       files.map((file) =>
         get<T>(`${path}/${file.name}`).tap((res) => {
           if (res.isOk()) {
@@ -78,8 +78,7 @@ function getDir<T>(path: string) {
             log.error(`${path}: Failed to load ${file.name}`);
           }
         })
-      ),
-      50
+      )
     )
   );
 }

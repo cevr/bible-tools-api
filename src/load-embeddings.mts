@@ -1,4 +1,3 @@
-import { LRUCache } from "lru-cache";
 import { Github } from "./github-cms.mjs";
 import {
   Embedding,
@@ -49,7 +48,7 @@ export function getBibleEmbeddings() {
 
 export function search(query: string) {
   return OpenAI.embed(query).flatMap((embedding) =>
-    Task.parallel([getEgwEmbeddings, getBibleEmbeddings]).map((results) => {
+    Task.sequential([getEgwEmbeddings, getBibleEmbeddings]).map((results) => {
       return {
         egw: compareEmbeddingToMultipleSets(embedding, results[0], 0.8, 5),
         bible: compareEmbeddingToMultipleSets(embedding, results[1], 0.8, 5),
