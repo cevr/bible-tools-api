@@ -78,12 +78,18 @@ fastify.get("/search", async (req, reply) => {
 });
 
 // Run the server!
-fastify.listen({ port: +env.PORT }, async (err, address) => {
-  if (err) {
-    fastify.log.error(err);
-    process.exit(1);
+fastify.listen(
+  {
+    port: +env.PORT,
+    host: env.NODE_ENV === "development" ? "localhost" : "0.0.0.0",
+  },
+  async (err, address) => {
+    if (err) {
+      fastify.log.error(err);
+      process.exit(1);
+    }
+    fastify.log.info("Loading embeddings...");
+    await getBibleEmbeddings();
+    getEgwEmbeddings();
   }
-  fastify.log.info("Loading embeddings...");
-  getBibleEmbeddings();
-  getEgwEmbeddings();
-});
+);
