@@ -71,7 +71,7 @@ fastify.get("/search", async (req, reply) => {
 });
 
 // Run the server!
-fastify.listen({ port: env.PORT }, async (err, address) => {
+fastify.listen({ port: +env.PORT }, async (err, address) => {
   if (err) {
     fastify.log.error(err);
     process.exit(1);
