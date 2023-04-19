@@ -7,9 +7,6 @@ dependencies:
   ftld:
     specifier: ^0.22.1
     version: 0.22.1
-  lru-cache:
-    specifier: ^9.1.0
-    version: 9.1.0
   undici:
     specifier: ^5.21.2
     version: 5.21.2
@@ -876,11 +873,6 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       yallist: 4.0.0
-    dev: false
-
-  /lru-cache@9.1.0:
-    resolution: {integrity: sha512-qFXQEwchrZcMVen2uIDceR8Tii6kCJak5rzDStfEM0qA3YLMswaxIEZO0DhIbJ3aqaJiDjt+3crlplOb0tDtKQ==}
-    engines: {node: 14 || >=16.14}
     dev: false
 
   /merge-stream@2.0.0:
