@@ -1,4 +1,8 @@
-import { Github } from "./github-cms.mjs";
+import {
+  Github,
+  GithubCouldNotGetDirError,
+  GithubCouldNotGetError,
+} from "./github-cms.mjs";
 import {
   Embedding,
   LabeledEmbedding,
@@ -13,13 +17,34 @@ const bibleEmbeddingsPath = "embeddings/bible";
 
 export const Queue = new TaskQueue();
 
-export function getEgwEmbeddings() {
+let egwEmbeddings:
+  | Result<
+      GithubCouldNotGetError | GithubCouldNotGetDirError,
+      LabeledEmbedding[][]
+    >
+  | undefined;
+let bibleEmbeddings:
+  | Result<
+      GithubCouldNotGetError | GithubCouldNotGetDirError,
+      LabeledEmbedding[][]
+    >
+  | undefined;
+
+export async function getEgwEmbeddings() {
+  if (egwEmbeddings) return egwEmbeddings;
   return Queue.add("egw", () =>
-    Github.getDir<LabeledEmbedding[]>(egwEmbeddingsPath).run()
+    Github.getDir<LabeledEmbedding[]>(egwEmbeddingsPath)
+      .tap((res) => {
+        if (res.isOk()) {
+          egwEmbeddings = res;
+        }
+      })
+      .run()
   );
 }
 
-export function getBibleEmbeddings() {
+export async function getBibleEmbeddings() {
+  if (bibleEmbeddings) return bibleEmbeddings;
   return Queue.add("bible", () =>
     Github.getDir<
       {
@@ -42,6 +67,11 @@ export function getBibleEmbeddings() {
           )
         )
       )
+      .tap((res) => {
+        if (res.isOk()) {
+          bibleEmbeddings = res;
+        }
+      })
       .run()
   );
 }
