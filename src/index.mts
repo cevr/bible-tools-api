@@ -31,6 +31,10 @@ export const fastify = Fastify({
 
 export const log = fastify.log;
 
+fastify.get("/", (request, reply) => {
+  reply.redirect("https://cvr.im/bible-tools");
+});
+
 // Declare a health check route
 fastify.get("/health", async (request, reply) => {
   if (
