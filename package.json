@@ -1,0 +1,30 @@
+{
+  "name": "bible-tools",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "module": "dist/index.mjs",
+  "scripts": {
+    "build": "tsup --format esm src/index.mts",
+    "dev": "tsx watch src/index.mts --clear-screen=false",
+    "start": "node dist/index.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^18.15.11",
+    "dotenv": "^16.0.3",
+    "pino-pretty": "^10.0.0",
+    "tsup": "^6.7.0",
+    "tsx": "^3.12.6",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "fastify": "^4.15.0",
+    "ftld": "^0.22.1",
+    "lru-cache": "^9.1.0",
+    "undici": "^5.21.2",
+    "zod": "^3.21.4"
+  }
+}
