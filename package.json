@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "module": "dist/index.js",
+  "type": "module",
   "scripts": {
-    "build": "tsup --format cjs src/index.mts",
+    "build": "tsup --format esm src/index.mts",
     "dev": "tsx watch src/index.mts --clear-screen=false",
     "start": "node dist/index.js"
   },
