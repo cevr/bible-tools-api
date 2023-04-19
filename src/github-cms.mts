@@ -36,7 +36,10 @@ function get<T>(path: string): Task<GithubCouldNotGetError, T> {
           "user-agent": "cvr-bible-tools",
         },
       }).then((res) => res.body.json()),
-    () => new GithubCouldNotGetError(`Could not fetch ${url}`)
+    (err) => {
+      log.error(err);
+      return new GithubCouldNotGetError(`Could not fetch ${url}`);
+    }
   );
 }
 

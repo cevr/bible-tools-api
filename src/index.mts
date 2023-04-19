@@ -1,6 +1,6 @@
 import "dotenv/config";
 import Fastify from "fastify";
-import { Result } from "ftld";
+import { Result, Task } from "ftld";
 import * as z from "zod";
 
 import {
@@ -89,7 +89,6 @@ fastify.listen(
       process.exit(1);
     }
     fastify.log.info("Loading embeddings...");
-    await getBibleEmbeddings();
-    getEgwEmbeddings();
+    Task.sequential([getEgwEmbeddings, getBibleEmbeddings]).run();
   }
 );

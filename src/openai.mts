@@ -3,6 +3,7 @@ import { Task } from "ftld";
 
 import { Embedding } from "./search-embeddings.mjs";
 import { env } from "./env.mjs";
+import { log } from "./index.mjs";
 
 class OpenAIEmbedFailedError extends Error {
   constructor(message: string) {
@@ -27,7 +28,10 @@ function embed(text: string): Task<OpenAIEmbedFailedError, Embedding> {
       })
         .then((res) => res.body.json())
         .then((res) => res.data[0].embedding as Embedding),
-    () => new OpenAIEmbedFailedError("Could not connect to OpenAI API")
+    (err) => {
+      log.error(err);
+      return new OpenAIEmbedFailedError("Could not connect to OpenAI API");
+    }
   );
 }
 
