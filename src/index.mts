@@ -38,7 +38,7 @@ fastify.get("/", (request, reply) => {
 // Declare a health check route
 fastify.get("/health", async (request, reply) => {
   if (
-    Queue.getStatus("egw") !== undefined ||
+    Queue.getStatus("egw") !== undefined &&
     Queue.getStatus("bible") !== undefined
   ) {
     return reply.send({ ok: false }).status(102);
