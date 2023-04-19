@@ -59,6 +59,7 @@ function chat(messages: Message[]) {
         body: JSON.stringify({
           model: "gpt-3.5-turbo",
           messages,
+          temperature: 0.2,
         }),
       })
         .then((res) => res.body.json())
