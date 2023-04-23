@@ -17,27 +17,20 @@ const bibleEmbeddingsPath = "embeddings/bible";
 
 const Queue = new TaskQueue();
 
-let egwEmbeddings:
-  | Result<
-      GithubCouldNotGetError | GithubCouldNotGetDirError,
-      LabeledEmbedding[][]
-    >
-  | undefined;
-let bibleEmbeddings:
-  | Result<
-      GithubCouldNotGetError | GithubCouldNotGetDirError,
-      LabeledEmbedding[][]
-    >
-  | undefined;
+let egwEmbeddings: LabeledEmbedding[][] | undefined;
+let bibleEmbeddings: LabeledEmbedding[][] | undefined;
 
-async function getEgwEmbeddings() {
-  if (egwEmbeddings) return egwEmbeddings;
+async function getEgwEmbeddings(): Promise<
+  Result<
+    GithubCouldNotGetDirError | GithubCouldNotGetError,
+    LabeledEmbedding[][]
+  >
+> {
+  if (egwEmbeddings) return Result.Ok(egwEmbeddings);
   return Queue.add("egw", () =>
     Github.getDir<LabeledEmbedding[]>(egwEmbeddingsPath)
       .tap((res) => {
-        if (res.isOk()) {
-          egwEmbeddings = res;
-        }
+        egwEmbeddings = res;
       })
       .run()
   );
@@ -51,8 +44,13 @@ function preload() {
   Task.sequential([getEgwEmbeddings, getBibleEmbeddings]).run();
 }
 
-async function getBibleEmbeddings() {
-  if (bibleEmbeddings) return bibleEmbeddings;
+async function getBibleEmbeddings(): Promise<
+  Result<
+    GithubCouldNotGetDirError | GithubCouldNotGetError,
+    LabeledEmbedding[][]
+  >
+> {
+  if (bibleEmbeddings) return Result.Ok(bibleEmbeddings);
   return Queue.add("bible", () =>
     Github.getDir<
       {
@@ -76,9 +74,7 @@ async function getBibleEmbeddings() {
         )
       )
       .tap((res) => {
-        if (res.isOk()) {
-          bibleEmbeddings = res;
-        }
+        bibleEmbeddings = res;
       })
       .run()
   );
