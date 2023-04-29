@@ -74,6 +74,8 @@ fastify.get("/search", async (req, reply) => {
     });
 });
 
+BibleTools.preload();
+
 // Run the server!
 fastify.listen(
   {
@@ -86,6 +88,5 @@ fastify.listen(
       process.exit(1);
     }
     fastify.log.info("Loading embeddings...");
-    BibleTools.preload();
   }
 );
