@@ -60,7 +60,7 @@ function getDir<T>(path: string) {
         },
       })
         .then((res) => res.body.json())
-        .then((res) => [res].flat() as GitHubFile[]);
+        .then((res) => [res].flat() as GitHubFile[]) as Promise<GitHubFile[]>;
     },
     (err) => {
       log.error(`path: Could not fetch ${url}`);

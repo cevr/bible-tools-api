@@ -3,7 +3,7 @@ import Fastify from "fastify";
 import { Result } from "ftld";
 import * as z from "zod";
 
-import { BibleTools } from "./load-embeddings.mjs";
+import { BibleTools } from "./api.mjs";
 
 import { env } from "./env.mjs";
 
@@ -33,7 +33,7 @@ fastify.get("/", (request, reply) => {
 // Declare a health check route
 fastify.get("/health", async (request, reply) => {
   if (BibleTools.isLoading()) {
-    return reply.send({ ok: false }).status(102);
+    return reply.send({ ok: false }).status(500);
   }
   return reply.send({ ok: true }).status(200);
 });

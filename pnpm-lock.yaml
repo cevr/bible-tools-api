@@ -5,8 +5,8 @@ dependencies:
     specifier: ^4.17.0
     version: 4.17.0
   ftld:
-    specifier: ^0.41.1
-    version: 0.41.1
+    specifier: ^0.41.6
+    version: 0.41.6
   undici:
     specifier: ^5.22.0
     version: 5.22.0
@@ -28,8 +28,8 @@ devDependencies:
     specifier: ^6.7.0
     version: 6.7.0(typescript@5.0.4)
   tsx:
-    specifier: ^3.12.6
-    version: 3.12.6
+    specifier: ^3.12.7
+    version: 3.12.7
   typescript:
     specifier: ^5.0.4
     version: 5.0.4
@@ -711,8 +711,8 @@ packages:
     dev: true
     optional: true
 
-  /ftld@0.41.1:
-    resolution: {integrity: sha512-Ohuff/AAHmonM0dXbjTSvxAF7BvIaTUXS/RAQiXFKuaHp4PVsb3HAoc9Eh2iPnsv8rn5jCjT0oO1JdpbZeyCbg==}
+  /ftld@0.41.6:
+    resolution: {integrity: sha512-K7GNPxjj6MOvmUsWPvnQTofHTEC2HROvqQXgCYE7JaXrmO4vPNBJYDVA0VNb0NtJFIlQV9GlyUd9w53JIFbeFw==}
     dev: false
 
   /get-stream@6.0.1:
@@ -1345,8 +1345,8 @@ packages:
       - ts-node
     dev: true
 
-  /tsx@3.12.6:
-    resolution: {integrity: sha512-q93WgS3lBdHlPgS0h1i+87Pt6n9K/qULIMNYZo07nSeu2z5QE2CellcAZfofVXBo2tQg9av2ZcRMQ2S2i5oadQ==}
+  /tsx@3.12.7:
+    resolution: {integrity: sha512-C2Ip+jPmqKd1GWVQDvz/Eyc6QJbGfE7NrR3fx5BpEHMZsEHoIxHL1j+lKdGobr8ovEyqeNkPLSKp6SCSOt7gmw==}
     hasBin: true
     dependencies:
       '@esbuild-kit/cjs-loader': 2.4.2

@@ -1,7 +1,7 @@
 import { request } from "undici";
 import { Task } from "ftld";
 
-import { Embedding } from "./search-embeddings.mjs";
+import { Embedding } from "./api.mjs";
 import { env } from "./env.mjs";
 import { log } from "./index.mjs";
 
@@ -27,12 +27,13 @@ function embed(text: string): Task<OpenAIEmbedFailedError, Embedding> {
         }),
       })
         .then((res) => res.body.json())
-        .then((res) => res.data[0].embedding as Embedding),
+        .then(
+          (res) => res.data[0].embedding as Embedding
+        ) as Promise<Embedding>,
     (err) => {
-      log.error(err);
       return new OpenAIEmbedFailedError("Could not connect to OpenAI API");
     }
-  );
+  ).tapErr((e) => log.error(e));
 }
 
 type Message = {
@@ -65,10 +66,9 @@ function chat(messages: Message[]) {
         .then((res) => res.body.json())
         .then((res) => res.choices[0].message.content as string),
     (e) => {
-      log.error(e);
       return new OpenAIChatFailedError("Could not connect to OpenAI API");
     }
-  );
+  ).tapErr((e) => log.error(e));
 }
 
 export const OpenAI = {
