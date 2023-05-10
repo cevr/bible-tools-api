@@ -213,7 +213,7 @@ function summaryTranscription(url: string) {
       }),
     (e) => YoutubeDownloadJSONFailedError({ meta: { url, error: e } })
   )
-    .tap((info) => log.info(`Downloaded video info: ${url}`))
+    .tap((info) => log.info(`Downloaded video info: ${JSON.stringify(info)}`))
     .flatMap((info) =>
       Task.from(
         async () => {
@@ -243,8 +243,9 @@ function summaryTranscription(url: string) {
         (e) => ReadVideoFailedError({ meta: { filename, error: e } })
       )
     )
-    .tap(() => {
-      log.info(`Read video: ${filename}`);
+    .tap((buffer) => {
+      // in MB
+      log.info(`Read video: ${filename}, ${buffer.length / 1000000} MB`);
       fs.rm(filename);
     })
     .flatMap((buffer) => OpenAI.transcribe(buffer))
