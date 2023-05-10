@@ -179,7 +179,12 @@ function search(query: string) {
   );
 }
 
-const audioPath = path.resolve(process.cwd(), "tmp", "audio");
+const YoutubeDownloadJSONFailedError = DomainError.make(
+  "YoutubeDownloadJSONFailedError"
+);
+const YoutubeSaveJSONFailedError = DomainError.make(
+  "YoutubeSaveJSONFailedError"
+);
 
 type YoutubeDownloadFailedError = DomainError<"YoutubeDownloadFailedError">;
 const YoutubeDownloadFailedError = DomainError.make(
@@ -195,30 +200,44 @@ type TranscriptionResponse = {
 };
 
 function summaryTranscription(url: string) {
+  const audioPath = path.resolve(process.cwd(), "tmp", "audio");
   const id = url.split("v=")[1];
-  const filename = path.resolve(audioPath, `${id}-${Date.now()}.m4a`);
-  const jsonFilename = path.resolve(audioPath, `${id}-${Date.now()}.json`);
+  const now = Date.now();
+  const filename = path.resolve(audioPath, `${id}-${now}.m4a`);
+  const jsonFilename = path.resolve(audioPath, `${id}-${now}.json`);
   return Task.from(
     () =>
       ytdl(url, {
         format: "ba",
         dumpSingleJson: true,
-      })
-        .then(async (info) => {
+      }),
+    (e) => YoutubeDownloadJSONFailedError({ meta: { url, error: e } })
+  )
+    .tap((info) => log.info(`Downloaded video info: ${url}`))
+    .flatMap((info) =>
+      Task.from(
+        async () => {
           await fs
             .mkdir(path.dirname(audioPath), { recursive: true })
             .catch(() => {});
           await fs.writeFile(jsonFilename, JSON.stringify(info));
-        })
-        .then(() =>
-          ytdl.exec("", {
+        },
+        (e) => YoutubeSaveJSONFailedError({ meta: { url, error: e } })
+      )
+    )
+    .tap(() => log.info(`Saved video info: ${url}`))
+    .flatMap(() =>
+      Task.from(
+        async () => {
+          await ytdl.exec("", {
             loadInfoJson: jsonFilename,
             format: "ba",
             output: filename,
-          })
-        ),
-    (e) => YoutubeDownloadFailedError({ meta: { url, error: e } })
-  )
+          });
+        },
+        (e) => YoutubeDownloadFailedError({ meta: { url, error: e } })
+      )
+    )
     .tap(() => log.info(`Downloaded video: ${url}`))
     .flatMap(() =>
       Task.from(
