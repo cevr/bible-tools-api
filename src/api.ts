@@ -209,12 +209,13 @@ function summaryTranscription(url: string) {
   const id = url.split("v=")[1];
   const now = Date.now();
   const chunkDir = path.resolve(audioPath, `${id}-${now}`);
-  const filename = path.resolve(audioPath, `${id}-${now}.m4a`);
+  const filename = path.resolve(audioPath, `${id}-${now}.mp3`);
   const jsonFilename = path.resolve(audioPath, `${id}-${now}.json`);
   return Task.from(
     () =>
       ytdl(url, {
         format: "ba",
+        audioFormat: "mp3",
         dumpSingleJson: true,
       }),
     () => YoutubeDownloadJSONFailedError({ meta: { url } })
@@ -234,6 +235,7 @@ function summaryTranscription(url: string) {
         async () => {
           await ytdl.exec("", {
             format: "ba",
+            audioFormat: "mp3",
             loadInfoJson: jsonFilename,
             output: filename,
           });
@@ -270,7 +272,7 @@ function summaryTranscription(url: string) {
             `${chunkDuration}`,
             "-c",
             "copy",
-            path.resolve(chunkDir, "%03d.m4a"),
+            path.resolve(chunkDir, "%03d.mp3"),
           ]);
         },
         (e) => ChunkVideoFailedError({ meta: { filename, error: e } })
