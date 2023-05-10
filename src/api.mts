@@ -218,7 +218,7 @@ function summaryTranscription(url: string) {
       Task.from(
         async () => {
           await fs
-            .mkdir(path.dirname(audioPath), { recursive: true })
+            .mkdir(path.dirname(jsonFilename), { recursive: true })
             .catch(() => {});
           await fs.writeFile(jsonFilename, JSON.stringify(info));
         },
