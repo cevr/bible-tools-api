@@ -202,7 +202,7 @@ const ReadVideoFailedError = DomainError.make("ReadVideoFailedError");
 const ConvertVideoFailedError = DomainError.make("ConvertVideoFailedError");
 
 type TranscriptionResponse = {
-  summaries: string[];
+  summary: string;
   transcription: string;
 };
 
@@ -338,23 +338,48 @@ function summaryTranscription(url: string) {
       )
     )
     .tap(() => log.info(`Transcribed video: ${filename}`))
-    .flatMap((transcription) =>
-      Task.parallel(
+    .flatMap((transcription) => {
+      const chunks = OpenAI.chunk(transcription);
+      if (chunks.length === 1) {
+        return OpenAI.chat([
+          OpenAI.chat.makeSystemMessage(transcriptionNoChunkPrompt),
+          OpenAI.chat.makeUserMessage(transcription),
+        ]).map(
+          (summary) =>
+            ({
+              transcription,
+              summary,
+            } as TranscriptionResponse)
+        );
+      }
+      return Task.parallel(
         OpenAI.chunk(transcription).map((chunked) =>
           OpenAI.chat([
-            OpenAI.chat.makeSystemMessage(transcriptionPrompt),
+            OpenAI.chat.makeSystemMessage(
+              transcriptionChunkPrompt(chunks.length)
+            ),
             OpenAI.chat.makeUserMessage(chunked),
           ])
         )
-      ).map<TranscriptionResponse>((responses) => ({
-        transcription,
-        summaries: responses,
-      }))
-    );
+      )
+        .flatMap((responses) =>
+          OpenAI.chat([
+            OpenAI.chat.makeSystemMessage(JoinChunksPrompt),
+            OpenAI.chat.makeUserMessage(responses.join("\n")),
+          ])
+        )
+        .map(
+          (summary) =>
+            ({
+              transcription,
+              summary,
+            } as TranscriptionResponse)
+        );
+    });
 }
 
-const transcriptionPrompt = `You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript, provide all the key points, and a study guide for the video.
-Be aware that the transcript may contain errors. If you notice any errors, please correct them. It may also be chunked into multiple parts. Please combine the parts into a single transcript.
+const transcriptionNoChunkPrompt = `You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript, provide all the key points, and a study guide for the video.
+Be aware that the transcript may contain errors. If you notice any errors, please correct them.
 
 Requirements:
 - Provide a summary of the video
@@ -377,6 +402,68 @@ Study Guide:
 Questions:
 - {{question_1}}
 ...`;
+
+const transcriptionChunkPrompt = (
+  parts: number
+) => `You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript, provide all the key points, and a study guide for the video.
+This transcript has been split into ${parts} parts. You will be given a part of the transcript to summarize.
+
+Requirements:
+- Provide a summary of the video
+- Provide a list of key points for the video
+- Provide a study guide for the video
+- Provide a list of questions for the video
+
+Example:
+---
+Transcript: {{transcript}}
+Response:
+---
+Summary:
+{{summary}}
+Key Points:
+- {{key_point_1}}
+...
+Study Guide:
+{{study_guide}}
+Questions:
+- {{question_1}}
+...
+
+---
+Please minimize the output to a language only you can understand and later decode. Please ensure that the output as short as possible.
+
+Requirements:
+- The output must be as short as possible
+- The output must be in a language only you can understand
+- The output must be in a format that can be decoded later
+`;
+
+const JoinChunksPrompt = `You are a study helper. You will be given a chunked, minimized, and encoded study guide for an educational video. Your task is to join the chunks together into a single study guide.
+Requirements:
+- Merge the chunks into a single study guide
+- Decode the study guide into a language that can be understood by others
+- Ensure that the study guide is coherent and understandable
+- Merge all the questions into a single list of questions
+- Merge all the key points into a single list of key points
+- Merge all the summaries into a single summary
+
+Example:
+---
+Transcript: {{transcript}}
+Response:
+---
+Summary:
+{{summary}}
+Key Points:
+- {{key_point_1}}
+...
+Study Guide:
+{{study_guide}}
+Questions:
+- {{question_1}}
+...
+`;
 
 export const BibleTools = {
   search,
