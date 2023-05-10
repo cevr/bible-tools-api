@@ -102,8 +102,8 @@ const OpenAITranscribeNoTextError = DomainError.make(
   "OpenAITranscribeNoTextError"
 );
 
-// openAI has a 25mb limit on file uploads
-const chunkSize = 26214400;
+// openAI has a 25mb limit on file uploads so make it 20mb to be safe
+const chunkSize = 20 * 1024 * 1024;
 
 const chunkBuffer = (buffer: Buffer) => {
   const chunks = [];
