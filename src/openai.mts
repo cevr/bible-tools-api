@@ -1,5 +1,5 @@
 import { File, FormData, request } from "undici";
-import { Task } from "ftld";
+import { Result, Task } from "ftld";
 
 import { Embedding } from "./api.mjs";
 import { env } from "./env.mjs";
@@ -42,6 +42,9 @@ type Message = {
 type OpenAIChatFailedError = DomainError<"OpenAIChatFailedError">;
 const OpenAIChatFailedError = DomainError.make("OpenAIChatFailedError");
 
+type OpenAIChatNoChoicesError = DomainError<"OpenAIChatNoChoicesError">;
+const OpenAIChatNoChoicesError = DomainError.make("OpenAIChatNoChoicesError");
+
 function chat(messages: Message[]) {
   return Task.from(
     () =>
@@ -52,18 +55,34 @@ function chat(messages: Message[]) {
           Authorization: `Bearer ${env.OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo",
+          model: "gpt-4",
           messages,
           temperature: 0.2,
         }),
-      })
-        .then((res) => res.body.json())
-        .then((res) => res.choices[0].message.content) as Promise<string>,
+      }).then((res) => res.body.json()) as Promise<{
+        choices: {
+          message: {
+            content: string;
+          };
+        }[];
+      }>,
     (e) =>
       OpenAIChatFailedError({
         meta: e,
       })
-  ).tapErr((e) => log.error(e));
+  )
+    .tap((res) => log.info(res))
+    .tapErr((e) => log.error(e))
+    .flatMap((res) =>
+      Result.fromPredicate(
+        res.choices,
+        () =>
+          OpenAIChatNoChoicesError({
+            meta: res,
+          }),
+        (x) => res.choices.length > 0
+      ).map((x) => x[0].message.content)
+    );
 }
 
 type OpenAITranscribeFailedError = DomainError<"OpenAITranscribeFailedError">;
@@ -86,14 +105,19 @@ function transcribe(audio: Buffer) {
           Authorization: `Bearer ${env.OPENAI_API_KEY}`,
         },
         body: formData,
-      })
-        .then((res) => res.body.json())
-        .then((res) => res.text) as Promise<string>,
+      }).then((res) => res.body.json()) as Promise<{
+        text: string;
+      }>,
+
     (e) =>
       OpenAITranscribeFailedError({
         meta: e,
       })
-  ).tapErr((err) => log.error(err));
+  )
+    .tapErr((err) => log.error(err))
+    .tap((res) => log.info(res))
+    .map((res) => res.text)
+    .tapErr((err) => log.error(err));
 }
 
 function makeUserMessage(content: string): Message {

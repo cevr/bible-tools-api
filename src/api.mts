@@ -212,7 +212,10 @@ function summaryTranscription(url: string) {
         (e) => ReadVideoFailedError({ meta: { filename, error: e } })
       )
     )
-    .tap(() => log.info(`Read video: ${filename}`))
+    .tap(() => {
+      log.info(`Read video: ${filename}`);
+      fs.rm(filename);
+    })
     .flatMap((buffer) => OpenAI.transcribe(buffer))
     .tap(() => log.info(`Transcribed video: ${filename}`))
     .flatMap((transcription) =>
