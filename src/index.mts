@@ -7,17 +7,19 @@ import { BibleTools } from "./api.mjs";
 
 import { env } from "./env.mjs";
 
-const envToLogger = {
-  development: {
-    transport: {
-      target: "pino-pretty",
-      options: {
-        translateTime: "HH:MM:ss Z",
-        ignore: "pid,hostname",
-      },
+const pretty = {
+  transport: {
+    target: "pino-pretty",
+    options: {
+      translateTime: "HH:MM:ss Z",
+      ignore: "pid,hostname",
     },
   },
-  production: true,
+};
+
+const envToLogger = {
+  development: pretty,
+  production: pretty,
   test: false,
 };
 export const fastify = Fastify({

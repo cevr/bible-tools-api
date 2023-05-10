@@ -102,25 +102,7 @@ const OpenAITranscribeNoTextError = DomainError.make(
   "OpenAITranscribeNoTextError"
 );
 
-// openAI has a 25mb limit on file uploads so make it 20mb to be safe
-const chunkSize = 20 * 1024 * 1024;
-
-const chunkBuffer = (buffer: Buffer) => {
-  const chunks = [];
-  for (let i = 0; i < buffer.length; i += chunkSize) {
-    chunks.push(buffer.subarray(i, i + chunkSize));
-  }
-  return chunks;
-};
-
 function transcribe(audio: Buffer) {
-  const chunks = chunkBuffer(audio);
-  return Task.parallel(chunks.map(transcribeChunk)).map((res) =>
-    res.join(" ")
-  );
-}
-
-function transcribeChunk(audio: Buffer) {
   const formData = new FormData();
   const file = new File([new Blob([audio])], "audio.wav", {
     type: "audio/wav",
@@ -147,7 +129,6 @@ function transcribeChunk(audio: Buffer) {
       })
   )
     .tapErr((err) => log.error(err))
-    .tap((res) => log.info(res))
     .flatMap((res) =>
       Result.fromPredicate(
         res.text,
@@ -155,6 +136,7 @@ function transcribeChunk(audio: Buffer) {
         () => OpenAITranscribeNoTextError()
       )
     )
+    .tap((res) => log.info(res))
     .tapErr((err) => log.error(err));
 }
 

@@ -2,6 +2,7 @@ import { Result, Task } from "ftld";
 import ytdl from "youtube-dl-exec";
 import path from "path";
 import { promises as fs } from "fs";
+import { execa } from "execa";
 
 import {
   Github,
@@ -186,6 +187,10 @@ const YoutubeSaveJSONFailedError = DomainError.make(
   "YoutubeSaveJSONFailedError"
 );
 
+const ChunkVideoFailedError = DomainError.make("ChunkVideoFailedError");
+const ReadChunkDirFailedError = DomainError.make("ReadChunkDirFailedError");
+const ReadChunksFailedError = DomainError.make("ReadChunkFailedError");
+
 type YoutubeDownloadFailedError = DomainError<"YoutubeDownloadFailedError">;
 const YoutubeDownloadFailedError = DomainError.make(
   "YoutubeDownloadFailedError"
@@ -203,29 +208,109 @@ function summaryTranscription(url: string) {
   const audioPath = path.resolve(process.cwd(), "tmp", "audio");
   const id = url.split("v=")[1];
   const now = Date.now();
-  const filename = path.resolve(audioPath, `${id}-${now}.m4a`);
+  const chunkDir = path.resolve(audioPath, `${id}-${now}`);
+  const filename = path.resolve(audioPath, `${id}-${now}.mp3`);
+  const jsonFilename = path.resolve(audioPath, `${id}-${now}.json`);
   return Task.from(
-    async () => {
-      await ytdl.exec(url, {
+    () =>
+      ytdl(url, {
         format: "ba",
-        output: filename,
-      });
-    },
-    (e) => YoutubeDownloadFailedError({ meta: { url, error: e } })
+        dumpSingleJson: true,
+      }),
+    () => YoutubeDownloadJSONFailedError({ meta: { url } })
   )
+    .flatMap((json) =>
+      Task.from(
+        async () => {
+          await fs.mkdir(path.dirname(jsonFilename), { recursive: true });
+          await fs.writeFile(jsonFilename, JSON.stringify(json));
+          return json;
+        },
+        () => YoutubeSaveJSONFailedError({ meta: { url } })
+      )
+    )
+    .flatMap((json) =>
+      Task.from(
+        async () => {
+          await ytdl.exec("", {
+            format: "ba",
+            audioFormat: "mp3",
+            loadInfoJson: jsonFilename,
+            output: filename,
+          });
+          return json;
+        },
+        (e) => YoutubeDownloadFailedError({ meta: { url, error: e } })
+      )
+    )
     .tap(() => log.info(`Downloaded video: ${url}`))
-    .flatMap(() =>
+    .flatMap((json) =>
       Task.from(
         () => fs.readFile(filename),
         (e) => ReadVideoFailedError({ meta: { filename, error: e } })
+      ).map((buffer) => ({ json, buffer }))
+    )
+    .flatMap(({ json, buffer }) =>
+      // split into chunks
+      {
+        const duration = json.duration;
+        const bufferSize = buffer.length;
+        const chunkSize = 20 * 1000 * 1000; // 20 MB
+        // calculate the number of chunks based on the size and duration
+        const numChunks = Math.ceil(bufferSize / chunkSize);
+        // calculate the duration of each chunk
+        const chunkDuration = Math.ceil(duration / numChunks);
+        log.info(`Read video: ${filename}, ${buffer.length / 1000000} MB`);
+
+        return Task.from(
+          async () => {
+            await execa("ffmpeg", [
+              "-i",
+              filename,
+              "-f",
+              "segment",
+              "-segment_time",
+              `${chunkDuration}`,
+              "-c",
+              "copy",
+              path.resolve(chunkDir, "%03d.mp3"),
+            ]);
+          },
+          (e) => ChunkVideoFailedError({ meta: { filename, error: e } })
+        );
+      }
+    )
+    .flatMap(() =>
+      Task.from(
+        async () => {
+          const files = await fs.readdir(chunkDir);
+          return files
+            .filter((file) => file.endsWith(".mp3"))
+            .map((file) => path.resolve(chunkDir, file));
+        },
+        (error) => ReadChunkDirFailedError({ meta: { chunkDir, error } })
       )
     )
-    .tap((buffer) => {
-      // in MB
-      log.info(`Read video: ${filename}, ${buffer.length / 1000000} MB`);
-      fs.rm(filename);
+    .flatMap((files) =>
+      Task.parallel(
+        files.map((file) =>
+          Task.from(
+            () => fs.readFile(file),
+            () => ReadChunksFailedError({ meta: { file } })
+          )
+        )
+      )
+    )
+    .tap(() => {
+      fs.rmdir(chunkDir, { recursive: true });
+      fs.rm(filename, { force: true });
+      fs.rm(jsonFilename, { force: true });
     })
-    .flatMap(OpenAI.transcribe)
+    .flatMap((files) =>
+      Task.parallel(files.map(OpenAI.transcribe)).map((transcriptions) =>
+        transcriptions.join(" ")
+      )
+    )
     .tap(() => log.info(`Transcribed video: ${filename}`))
     .flatMap((transcription) =>
       OpenAI.chat([
