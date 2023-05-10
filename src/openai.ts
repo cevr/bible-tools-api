@@ -55,7 +55,32 @@ type OpenAIChatResponse = {
   }[];
 };
 
-function chat(messages: (Message[] | Message)[]) {
+const countTokens = (str: string) => str.split(" ").length;
+
+type MaximumTokensExceededError = DomainError<"MaximumTokensExceededError">;
+const MaximumTokensExceededError = DomainError.make(
+  "MaximumTokensExceededError"
+);
+
+function chat(
+  messages: (Message[] | Message)[]
+): Task<
+  MaximumTokensExceededError | OpenAIChatFailedError | OpenAIChatNoChoicesError,
+  string
+> {
+  const totalTokens = messages
+    .flat()
+    .reduce((total, message) => total + countTokens(message.content), 0);
+  if (totalTokens > maxTokens) {
+    return Task.Err(
+      MaximumTokensExceededError({
+        meta: {
+          totalTokens,
+          maxTokens,
+        },
+      })
+    );
+  }
   return Task.from(
     () =>
       request("https://api.openai.com/v1/chat/completions", {
@@ -65,7 +90,7 @@ function chat(messages: (Message[] | Message)[]) {
           Authorization: `Bearer ${env.OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "gpt-4-32k",
+          model: "gpt-4",
           messages: messages.flat(),
           temperature: 0.2,
         }),
@@ -193,4 +218,5 @@ export const OpenAI = {
     makeAssistantMessage,
   }),
   transcribe,
+  chunk,
 };

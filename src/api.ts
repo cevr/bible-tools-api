@@ -202,7 +202,7 @@ const ReadVideoFailedError = DomainError.make("ReadVideoFailedError");
 const ConvertVideoFailedError = DomainError.make("ConvertVideoFailedError");
 
 type TranscriptionResponse = {
-  summary: string;
+  summaries: string[];
   transcription: string;
 };
 
@@ -325,6 +325,7 @@ function summaryTranscription(url: string) {
         )
       )
     )
+    .tap((files) => log.info(`Read chunks: ${files.length} chunks`))
     .tap(() => {
       fs.rmdir(chunkDir, { recursive: true });
       fs.rm(filename, { force: true });
@@ -338,16 +339,17 @@ function summaryTranscription(url: string) {
     )
     .tap(() => log.info(`Transcribed video: ${filename}`))
     .flatMap((transcription) =>
-      OpenAI.chat([
-        OpenAI.chat.makeSystemMessage(transcriptionPrompt),
-        OpenAI.chat.makeUserMessage(transcription),
-      ]).map(
-        (summary) =>
-          ({
-            transcription,
-            summary,
-          } as TranscriptionResponse)
-      )
+      Task.parallel(
+        OpenAI.chunk(transcription).map((chunked) =>
+          OpenAI.chat([
+            OpenAI.chat.makeSystemMessage(transcriptionPrompt),
+            OpenAI.chat.makeUserMessage(chunked),
+          ])
+        )
+      ).map<TranscriptionResponse>((responses) => ({
+        transcription,
+        summaries: responses,
+      }))
     );
 }
 

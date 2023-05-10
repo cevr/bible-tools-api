@@ -1,5 +1,5 @@
 import "dotenv/config";
-import Fastify from "fastify";
+import Fastify, { FastifyBaseLogger, FastifyLoggerOptions } from "fastify";
 import { Result } from "ftld";
 import * as z from "zod";
 
@@ -19,7 +19,7 @@ const pretty = {
 
 const envToLogger = {
   development: pretty,
-  production: true,
+  production: pretty,
   test: false,
 };
 export const fastify = Fastify({
