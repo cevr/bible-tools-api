@@ -209,7 +209,7 @@ function summaryTranscription(url: string) {
   const id = url.split("v=")[1];
   const now = Date.now();
   const chunkDir = path.resolve(audioPath, `${id}-${now}`);
-  const filename = path.resolve(audioPath, `${id}-${now}.mp3`);
+  const filename = path.resolve(audioPath, `${id}-${now}.m4a`);
   const jsonFilename = path.resolve(audioPath, `${id}-${now}.json`);
   return Task.from(
     () =>
@@ -234,7 +234,6 @@ function summaryTranscription(url: string) {
         async () => {
           await ytdl.exec("", {
             format: "ba",
-            audioFormat: "mp3",
             loadInfoJson: jsonFilename,
             output: filename,
           });
@@ -250,37 +249,32 @@ function summaryTranscription(url: string) {
         (e) => ReadVideoFailedError({ meta: { filename, error: e } })
       ).map((buffer) => ({ json, buffer }))
     )
-    .flatMap(async ({ json, buffer }) =>
-      // split into chunks
-      {
-        const duration = json.duration;
-        const bufferSize = buffer.length;
-        const chunkSize = 20 * 1000 * 1000; // 20 MB
-        // calculate the number of chunks based on the size and duration
-        const numChunks = Math.ceil(bufferSize / chunkSize);
-        // calculate the duration of each chunk
-        const chunkDuration = Math.ceil(duration / numChunks);
-        log.info(`Read video: ${filename}, ${buffer.length / 1000000} MB`);
-
-        await fs.mkdir(chunkDir, { recursive: true });
-
-        return Task.from(
-          async () => {
-            await execa(path.resolve(process.cwd(), "ffmpeg"), [
-              "-i",
-              filename,
-              "-f",
-              "segment",
-              "-segment_time",
-              `${chunkDuration}`,
-              "-c",
-              "copy",
-              path.resolve(chunkDir, "%03d.mp3"),
-            ]);
-          },
-          (e) => ChunkVideoFailedError({ meta: { filename, error: e } })
-        );
-      }
+    .flatMap(({ json, buffer }) =>
+      Task.from(
+        async () => {
+          const duration = json.duration;
+          const bufferSize = buffer.length;
+          const chunkSize = 20 * 1000 * 1000; // 20 MB
+          // calculate the number of chunks based on the size and duration
+          const numChunks = Math.ceil(bufferSize / chunkSize);
+          // calculate the duration of each chunk
+          const chunkDuration = Math.ceil(duration / numChunks);
+          log.info(`Read video: ${filename}, ${buffer.length / 1000000} MB`);
+          await fs.mkdir(chunkDir, { recursive: true });
+          await execa(path.resolve(process.cwd(), "ffmpeg"), [
+            "-i",
+            filename,
+            "-f",
+            "segment",
+            "-segment_time",
+            `${chunkDuration}`,
+            "-c",
+            "copy",
+            path.resolve(chunkDir, "%03d.m4a"),
+          ]);
+        },
+        (e) => ChunkVideoFailedError({ meta: { filename, error: e } })
+      )
     )
     .flatMap(() =>
       Task.from(
