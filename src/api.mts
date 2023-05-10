@@ -204,38 +204,15 @@ function summaryTranscription(url: string) {
   const id = url.split("v=")[1];
   const now = Date.now();
   const filename = path.resolve(audioPath, `${id}-${now}.m4a`);
-  const jsonFilename = path.resolve(audioPath, `${id}-${now}.json`);
   return Task.from(
-    () =>
-      ytdl(url, {
+    async () => {
+      await ytdl.exec(url, {
         format: "ba",
-        dumpSingleJson: true,
-      }),
-    (e) => YoutubeDownloadJSONFailedError({ meta: { url, error: e } })
+        output: filename,
+      });
+    },
+    (e) => YoutubeDownloadFailedError({ meta: { url, error: e } })
   )
-    .tap((info) => log.info(`Downloaded video info: ${JSON.stringify(info)}`))
-    .flatMap((info) =>
-      Task.from(
-        async () => {
-          await fs.mkdir(path.dirname(jsonFilename), { recursive: true });
-          await fs.writeFile(jsonFilename, JSON.stringify(info));
-        },
-        (e) => YoutubeSaveJSONFailedError({ meta: { url, error: e } })
-      )
-    )
-    .tap(() => log.info(`Saved video info: ${url}`))
-    .flatMap(() =>
-      Task.from(
-        async () => {
-          await ytdl.exec("", {
-            loadInfoJson: jsonFilename,
-            format: "ba",
-            output: filename,
-          });
-        },
-        (e) => YoutubeDownloadFailedError({ meta: { url, error: e } })
-      )
-    )
     .tap(() => log.info(`Downloaded video: ${url}`))
     .flatMap(() =>
       Task.from(
