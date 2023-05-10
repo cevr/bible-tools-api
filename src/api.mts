@@ -217,7 +217,7 @@ function summaryTranscription(url: string) {
     .tap(() => log.info(`Transcribed video: ${filename}`))
     .flatMap((transcription) =>
       OpenAI.chat([
-        OpenAI.chat.makeUserMessage(transcriptionPrompt),
+        OpenAI.chat.makeSystemMessage(transcriptionPrompt),
         OpenAI.chat.makeUserMessage(transcription),
       ]).map(
         (summary) =>
