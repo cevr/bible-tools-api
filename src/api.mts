@@ -217,9 +217,7 @@ function summaryTranscription(url: string) {
     .flatMap((info) =>
       Task.from(
         async () => {
-          await fs
-            .mkdir(path.dirname(jsonFilename), { recursive: true })
-            .catch(() => {});
+          await fs.mkdir(path.dirname(jsonFilename), { recursive: true });
           await fs.writeFile(jsonFilename, JSON.stringify(info));
         },
         (e) => YoutubeSaveJSONFailedError({ meta: { url, error: e } })
