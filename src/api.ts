@@ -264,7 +264,7 @@ function summaryTranscription(url: string) {
 
         return Task.from(
           async () => {
-            await execa("ffmpeg", [
+            await execa(path.resolve(process.cwd(), "ffmpeg"), [
               "-i",
               filename,
               "-f",
