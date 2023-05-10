@@ -1,16 +1,13 @@
-import { request } from "undici";
+import { File, FormData, request } from "undici";
 import { Task } from "ftld";
 
 import { Embedding } from "./api.mjs";
 import { env } from "./env.mjs";
 import { log } from "./index.mjs";
+import { DomainError } from "./domain-error.js";
 
-class OpenAIEmbedFailedError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "OpenAIEmbedFailedError";
-  }
-}
+type OpenAIEmbedFailedError = DomainError<"OpenAIEmbedFailedError">;
+const OpenAIEmbedFailedError = DomainError.make("OpenAIEmbedFailedError");
 
 function embed(text: string): Task<OpenAIEmbedFailedError, Embedding> {
   return Task.from(
@@ -30,23 +27,20 @@ function embed(text: string): Task<OpenAIEmbedFailedError, Embedding> {
         .then(
           (res) => res.data[0].embedding as Embedding
         ) as Promise<Embedding>,
-    (err) => {
-      return new OpenAIEmbedFailedError("Could not connect to OpenAI API");
-    }
+    (err) =>
+      OpenAIEmbedFailedError({
+        meta: err,
+      })
   ).tapErr((e) => log.error(e));
 }
 
 type Message = {
-  role: "user" | "system";
+  role: "user" | "system" | "assistant";
   content: string;
 };
 
-class OpenAIChatFailedError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "OpenAIChatFailedError";
-  }
-}
+type OpenAIChatFailedError = DomainError<"OpenAIChatFailedError">;
+const OpenAIChatFailedError = DomainError.make("OpenAIChatFailedError");
 
 function chat(messages: Message[]) {
   return Task.from(
@@ -64,14 +58,70 @@ function chat(messages: Message[]) {
         }),
       })
         .then((res) => res.body.json())
-        .then((res) => res.choices[0].message.content as string),
-    (e) => {
-      return new OpenAIChatFailedError("Could not connect to OpenAI API");
-    }
+        .then((res) => res.choices[0].message.content) as Promise<string>,
+    (e) =>
+      OpenAIChatFailedError({
+        meta: e,
+      })
   ).tapErr((e) => log.error(e));
+}
+
+type OpenAITranscribeFailedError = DomainError<"OpenAITranscribeFailedError">;
+const OpenAITranscribeFailedError = DomainError.make(
+  "OpenAITranscribeFailedError"
+);
+
+function transcribe(audio: Buffer) {
+  const formData = new FormData();
+  const file = new File([audio], "audio.m4a");
+  formData.append("file", file);
+  formData.append("model", "whisper-1");
+  formData.append("temperature", "0.2");
+  return Task.from(
+    () =>
+      request("https//api.openai.com/v1/audio/transcriptions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+        },
+        body: formData,
+      })
+        .then((res) => res.body.json())
+        .then((res) => res.text) as Promise<string>,
+    (e) =>
+      OpenAITranscribeFailedError({
+        meta: e,
+      })
+  ).tapErr(log.error);
+}
+
+function makeUserMessage(content: string): Message {
+  return {
+    role: "user",
+    content,
+  };
+}
+
+function makeSystemMessage(content: string): Message {
+  return {
+    role: "system",
+    content,
+  };
+}
+
+function makeAssistantMessage(content: string): Message {
+  return {
+    role: "assistant",
+    content,
+  };
 }
 
 export const OpenAI = {
   embed,
-  chat,
+  chat: Object.assign(chat, {
+    makeUserMessage,
+    makeSystemMessage,
+    makeAssistantMessage,
+  }),
+  transcribe,
 };

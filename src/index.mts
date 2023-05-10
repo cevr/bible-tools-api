@@ -56,7 +56,7 @@ const searchSchema = schemaToResult(
 
 fastify.get("/search", async (req, reply) => {
   await searchSchema(req.query)
-    .toTask()
+    .task()
     .flatMap(({ q }) => BibleTools.search(q))
     .match({
       Ok: (data) => {
@@ -68,6 +68,33 @@ fastify.get("/search", async (req, reply) => {
         reply
           .send({
             error: "Could not search",
+          })
+          .status(500);
+      },
+    });
+});
+
+const transcribeSchema = schemaToResult(
+  z.object({
+    url: z.string().url(),
+  })
+);
+
+fastify.get("/transcribe", async (req, reply) => {
+  await transcribeSchema(req.query)
+    .task()
+    .flatMap(({ url }) => BibleTools.summaryTranscription(url))
+    .match({
+      Ok: (data) => {
+        log.info(data);
+        reply.send(data).status(200);
+      },
+      Err: (err) => {
+        log.error(err);
+        reply
+          .send({
+            message: "Could not transcribe",
+            error: err,
           })
           .status(500);
       },

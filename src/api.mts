@@ -1,3 +1,8 @@
+import { Result, Task } from "ftld";
+import ytdl from "youtube-dl-exec";
+import path from "path";
+import { promises as fs } from "fs";
+
 import {
   Github,
   GithubCouldNotGetDirError,
@@ -5,8 +10,9 @@ import {
 } from "./github-cms.mjs";
 
 import { OpenAI } from "./openai.mjs";
-import { Result, Task } from "ftld";
 import { TaskQueue } from "./task-queue.mjs";
+import { DomainError } from "./domain-error.js";
+import { log } from "./index.mjs";
 
 export type Embedding = number[];
 export type LabeledEmbedding = {
@@ -173,8 +179,88 @@ function search(query: string) {
   );
 }
 
+const audioPath = path.resolve(process.cwd(), "tmp", "audio");
+
+type YoutubeDownloadFailedError = DomainError<"YoutubeDownloadFailedError">;
+const YoutubeDownloadFailedError = DomainError.make(
+  "YoutubeDownloadFailedError"
+);
+
+type ReadVideoFailedError = DomainError<"ReadVideoFailedError">;
+const ReadVideoFailedError = DomainError.make("ReadVideoFailedError");
+
+type TranscriptionResponse = {
+  summary: string;
+  transcription: string;
+};
+
+function summaryTranscription(url: string) {
+  const id = url.split("v=")[1];
+  const filename = path.resolve(audioPath, `${id}.m4a`);
+  return Task.from(
+    () =>
+      ytdl.exec(url, {
+        format: "bestaudio/best",
+        output: filename,
+      }),
+    (e) => YoutubeDownloadFailedError({ meta: { url, error: e } })
+  )
+    .tap(() => log.info(`Downloaded video: ${url}`))
+    .flatMap(() =>
+      Task.from(
+        () => fs.readFile(filename),
+        (e) => ReadVideoFailedError({ meta: { filename, error: e } })
+      )
+    )
+    .tap(() => log.info(`Read video: ${filename}`))
+    .flatMap((buffer) => OpenAI.transcribe(buffer))
+    .tap(() => log.info(`Transcribed video: ${filename}`))
+    .flatMap((transcription) =>
+      OpenAI.chat([
+        OpenAI.chat.makeUserMessage(transcriptionPrompt),
+        OpenAI.chat.makeUserMessage(transcription),
+      ]).map(
+        (summary) =>
+          ({
+            transcription,
+            summary,
+          } as TranscriptionResponse)
+      )
+    )
+    .tap(() => log.info(`provided summary for video: ${filename}`));
+}
+
+const transcriptionPrompt = `You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript, provide all the key points, and a study guide for the video.
+        Requirements:
+        - Provide a summary of the video
+        - Provide a list of key points for the video
+        - Provide a study guide for the video
+        - Provide a list of questions for the video
+
+        Example:
+        ---
+        Transcript: {{transcript}}
+
+
+        Response:
+        ---
+        Summary:
+        {{summary}}
+        Key Points:
+        - {{key_point_1}}
+        - {{key_point_2}}
+        ...
+        Study Guide:
+        {{study_guide}}
+        Questions:
+        - {{question_1}}
+        - {{question_2}}
+        ...
+      `;
+
 export const BibleTools = {
   search,
+  summaryTranscription,
   isLoading,
   preload,
 };
