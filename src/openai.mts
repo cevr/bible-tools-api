@@ -115,7 +115,7 @@ const chunkBuffer = (buffer: Buffer) => {
 
 function transcribe(audio: Buffer) {
   const chunks = chunkBuffer(audio);
-  return Task.sequential(chunks.map(transcribeChunk)).map((res) =>
+  return Task.parallel(chunks.map(transcribeChunk)).map((res) =>
     res.join(" ")
   );
 }

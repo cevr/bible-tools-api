@@ -225,7 +225,7 @@ function summaryTranscription(url: string) {
       log.info(`Read video: ${filename}, ${buffer.length / 1000000} MB`);
       fs.rm(filename);
     })
-    .flatMap((buffer) => OpenAI.transcribe(buffer))
+    .flatMap(OpenAI.transcribe)
     .tap(() => log.info(`Transcribed video: ${filename}`))
     .flatMap((transcription) =>
       OpenAI.chat([
