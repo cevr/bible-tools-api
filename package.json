@@ -5,6 +5,7 @@
   "module": "dist/index.js",
   "type": "module",
   "scripts": {
+    "binaries": "ffbinaries ffmpeg",
     "build": "tsup",
     "dev": "tsx watch src/index.mts --clear-screen=false",
     "start": "node --max-old-space-size=4096 dist/index.js"
@@ -15,6 +16,7 @@
   "devDependencies": {
     "@types/node": "^18.16.6",
     "dotenv": "^16.0.3",
+    "ffbinaries": "^1.1.5",
     "pino-pretty": "^10.0.0",
     "tsup": "^6.7.0",
     "tsx": "^3.12.7",
