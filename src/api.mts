@@ -200,7 +200,7 @@ function summaryTranscription(url: string) {
   return Task.from(
     () =>
       ytdl.exec(url, {
-        format: "bestaudio/best",
+        format: "ba",
         output: filename,
       }),
     (e) => YoutubeDownloadFailedError({ meta: { url, error: e } })
