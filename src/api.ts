@@ -305,7 +305,12 @@ function summaryTranscription(url: string) {
           const files = await fs.readdir(chunkDir);
           return files
             .filter((file) => file.endsWith(".mp3"))
-            .map((file) => path.resolve(chunkDir, file));
+            .map((file) => path.resolve(chunkDir, file))
+            .sort((a, b) => {
+              const aNum = parseInt(a.split(".")[0]);
+              const bNum = parseInt(b.split(".")[0]);
+              return aNum - bNum;
+            });
         },
         (error) => ReadChunkDirFailedError({ meta: { chunkDir, error } })
       )
@@ -346,8 +351,7 @@ function summaryTranscription(url: string) {
     );
 }
 
-const transcriptionPrompt =
-`You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript, provide all the key points, and a study guide for the video.
+const transcriptionPrompt = `You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript, provide all the key points, and a study guide for the video.
 Be aware that the transcript may contain errors. If you notice any errors, please correct them. It may also be chunked into multiple parts. Please combine the parts into a single transcript.
 
 Requirements:
@@ -359,21 +363,17 @@ Requirements:
 Example:
 ---
 Transcript: {{transcript}}
-
-
 Response:
 ---
 Summary:
 {{summary}}
 Key Points:
 - {{key_point_1}}
-- {{key_point_2}}
 ...
 Study Guide:
 {{study_guide}}
 Questions:
 - {{question_1}}
-- {{question_2}}
 ...`;
 
 export const BibleTools = {

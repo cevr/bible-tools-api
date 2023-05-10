@@ -65,7 +65,7 @@ function chat(messages: (Message[] | Message)[]) {
           Authorization: `Bearer ${env.OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "gpt-4",
+          model: "gpt-4-32k",
           messages: messages.flat(),
           temperature: 0.2,
         }),

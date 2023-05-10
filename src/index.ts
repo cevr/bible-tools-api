@@ -19,7 +19,7 @@ const pretty = {
 
 const envToLogger = {
   development: pretty,
-  production: pretty,
+  production: true,
   test: false,
 };
 export const fastify = Fastify({
