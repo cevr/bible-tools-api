@@ -79,7 +79,7 @@ function transcribe(audio: Buffer) {
   formData.append("temperature", "0.2");
   return Task.from(
     () =>
-      request("https//api.openai.com/v1/audio/transcriptions", {
+      request("https://api.openai.com/v1/audio/transcriptions", {
         method: "POST",
         headers: {
           "Content-Type": "multipart/form-data",
