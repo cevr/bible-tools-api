@@ -5,8 +5,8 @@ dependencies:
     specifier: ^4.17.0
     version: 4.17.0
   ftld:
-    specifier: ^0.48.5
-    version: 0.48.5
+    specifier: ^0.49.0
+    version: 0.49.0
   undici:
     specifier: ^5.22.0
     version: 5.22.0
@@ -748,8 +748,8 @@ packages:
     dev: true
     optional: true
 
-  /ftld@0.48.5:
-    resolution: {integrity: sha512-kKsKV+6wm/fiulqmydJTXQvNmQVWxN5z72aM/MvpQD6Ek6fK5Iod73eiW2leUEDXomaMp0FsVI2mAUuL+Ka+Qw==}
+  /ftld@0.49.0:
+    resolution: {integrity: sha512-Amt06t2RvsNkV/E5kehKEcnoN1HtX0LC8ajt0ZIK2kwyzHNZsuc7WwMEmtMHePnMyi8jOWt5Sg3VJauLb+91Rw==}
     dev: false
 
   /get-stream@6.0.1:

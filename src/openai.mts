@@ -48,7 +48,7 @@ type OpenAIChatNoChoicesError = DomainError<"OpenAIChatNoChoicesError">;
 const OpenAIChatNoChoicesError = DomainError.make("OpenAIChatNoChoicesError");
 
 type OpenAIChatResponse = {
-  choices: {
+  choices?: {
     message: {
       content: string;
     };
@@ -80,12 +80,15 @@ function chat(messages: Message[]) {
     .flatMap((res) =>
       Result.fromPredicate(
         res.choices,
+        (
+          x
+        ): x is NonEmptyArray<
+          Required<OpenAIChatResponse>["choices"][number]
+        > => !!x && x.length > 0,
         () =>
           OpenAIChatNoChoicesError({
             meta: res,
-          }),
-        (x): x is NonEmptyArray<OpenAIChatResponse["choices"][number]> =>
-          x.length > 0
+          })
       ).map((x) => x[0].message.content)
     );
 }
@@ -95,9 +98,15 @@ const OpenAITranscribeFailedError = DomainError.make(
   "OpenAITranscribeFailedError"
 );
 
+const OpenAITranscribeNoTextError = DomainError.make(
+  "OpenAITranscribeNoTextError"
+);
+
 function transcribe(audio: Buffer) {
   const formData = new FormData();
-  const file = new File([audio], "audio.m4a");
+  const file = new File([audio], "audio.m4a", {
+    type: "audio/m4a",
+  });
   formData.append("file", file);
   formData.append("model", "whisper-1");
   formData.append("temperature", "0.2");
@@ -111,7 +120,7 @@ function transcribe(audio: Buffer) {
         },
         body: formData,
       }).then((res) => res.body.json()) as Promise<{
-        text: string;
+        text?: string;
       }>,
 
     (e) =>
@@ -121,7 +130,13 @@ function transcribe(audio: Buffer) {
   )
     .tapErr((err) => log.error(err))
     .tap((res) => log.info(res))
-    .map((res) => res.text)
+    .flatMap((res) =>
+      Result.fromPredicate(
+        res.text,
+        (x): x is NonNullable<typeof x> => !!x,
+        () => OpenAITranscribeNoTextError()
+      )
+    )
     .tapErr((err) => log.error(err));
 }
 
