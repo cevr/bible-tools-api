@@ -199,6 +199,8 @@ const YoutubeDownloadFailedError = DomainError.make(
 type ReadVideoFailedError = DomainError<"ReadVideoFailedError">;
 const ReadVideoFailedError = DomainError.make("ReadVideoFailedError");
 
+const ConvertVideoFailedError = DomainError.make("ConvertVideoFailedError");
+
 type TranscriptionResponse = {
   summary: string;
   transcription: string;
@@ -209,15 +211,16 @@ function summaryTranscription(url: string) {
   const id = url.split("v=")[1];
   const now = Date.now();
   const chunkDir = path.resolve(audioPath, `${id}-${now}`);
-  const filename = path.resolve(audioPath, `${id}-${now}.mp3`);
+  const filename = path.resolve(audioPath, `${id}-${now}.m4a`);
+  const mp3Filename = path.resolve(audioPath, `${id}-${now}.mp3`);
   const jsonFilename = path.resolve(audioPath, `${id}-${now}.json`);
   return Task.from(
     () =>
       ytdl(url, {
-        format: "mp3",
+        format: "ba",
         dumpSingleJson: true,
       }),
-    () => YoutubeDownloadJSONFailedError({ meta: { url } })
+    (e) => YoutubeDownloadJSONFailedError({ meta: { url, error: e } })
   )
     .flatMap((json) =>
       Task.from(
@@ -226,14 +229,14 @@ function summaryTranscription(url: string) {
           await fs.writeFile(jsonFilename, JSON.stringify(json));
           return json;
         },
-        () => YoutubeSaveJSONFailedError({ meta: { url } })
+        (e) => YoutubeSaveJSONFailedError({ meta: { url, error: e } })
       )
     )
     .flatMap((json) =>
       Task.from(
         async () => {
           await ytdl.exec("", {
-            format: "mp3",
+            format: "ba",
             loadInfoJson: jsonFilename,
             output: filename,
           });
@@ -245,7 +248,25 @@ function summaryTranscription(url: string) {
     .tap(() => log.info(`Downloaded video: ${url}`))
     .flatMap((json) =>
       Task.from(
-        () => fs.readFile(filename),
+        async () => {
+          await execa(path.resolve(process.cwd(), "ffmpeg"), [
+            "-i",
+            filename,
+            "-vn",
+            "-c:a",
+            "libmp3lame",
+            "-q:a",
+            "2",
+            mp3Filename,
+          ]);
+          return json;
+        },
+        (e) => ConvertVideoFailedError({ meta: { url, error: e } })
+      )
+    )
+    .flatMap((json) =>
+      Task.from(
+        () => fs.readFile(mp3Filename),
         (e) => ReadVideoFailedError({ meta: { filename, error: e } })
       ).map((buffer) => ({ json, buffer }))
     )
@@ -259,11 +280,11 @@ function summaryTranscription(url: string) {
           const numChunks = Math.ceil(bufferSize / chunkSize);
           // calculate the duration of each chunk
           const chunkDuration = Math.ceil(duration / numChunks);
-          log.info(`Read video: ${filename}, ${buffer.length / 1000000} MB`);
+          log.info(`Read video: ${mp3Filename}, ${buffer.length / 1000000} MB`);
           await fs.mkdir(chunkDir, { recursive: true });
           await execa(path.resolve(process.cwd(), "ffmpeg"), [
             "-i",
-            filename,
+            mp3Filename,
             "-f",
             "segment",
             "-segment_time",
