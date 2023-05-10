@@ -104,8 +104,8 @@ const OpenAITranscribeNoTextError = DomainError.make(
 
 function transcribe(audio: Buffer) {
   const formData = new FormData();
-  const file = new File([audio], "audio.m4a", {
-    type: "audio/m4a",
+  const file = new File([new Blob([audio])], "audio.wav", {
+    type: "audio/wav",
   });
   formData.append("file", file);
   formData.append("model", "whisper-1");
