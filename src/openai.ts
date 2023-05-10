@@ -55,7 +55,7 @@ type OpenAIChatResponse = {
   }[];
 };
 
-function chat(messages: Message[]) {
+function chat(messages: (Message[] | Message)[]) {
   return Task.from(
     () =>
       request("https://api.openai.com/v1/chat/completions", {
@@ -66,7 +66,7 @@ function chat(messages: Message[]) {
         },
         body: JSON.stringify({
           model: "gpt-4",
-          messages,
+          messages: messages.flat(),
           temperature: 0.2,
         }),
       }).then((res) => res.body.json()) as Promise<OpenAIChatResponse>,
@@ -140,14 +140,37 @@ function transcribe(audio: Buffer) {
     .tapErr((err) => log.error(err));
 }
 
-function makeUserMessage(content: string): Message {
-  return {
+const maxTokens = 8192;
+const chunk = (text: string) => {
+  const words = text.split(" ");
+  const chunks = [];
+  let chunk = "";
+  for (const word of words) {
+    if (chunk.length + word.length + 1 > maxTokens) {
+      chunks.push(chunk);
+      chunk = "";
+    }
+    chunk += word + " ";
+  }
+  chunks.push(chunk);
+  return chunks;
+};
+
+const assertWordCount = (text: string) => {
+  if (!(text.split(" ").length <= maxTokens)) {
+    throw new Error(`Text is too long. Max word count is ${maxTokens}`);
+  }
+};
+
+function makeUserMessage(content: string): Message[] {
+  return chunk(content).map((content) => ({
     role: "user",
     content,
-  };
+  }));
 }
 
 function makeSystemMessage(content: string): Message {
+  assertWordCount(content);
   return {
     role: "system",
     content,
@@ -155,6 +178,7 @@ function makeSystemMessage(content: string): Message {
 }
 
 function makeAssistantMessage(content: string): Message {
+  assertWordCount(content);
   return {
     role: "assistant",
     content,

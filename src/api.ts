@@ -264,6 +264,7 @@ function summaryTranscription(url: string) {
         (e) => ConvertVideoFailedError({ meta: { url, error: e } })
       )
     )
+    .tap(() => log.info(`Converted video to mp3: ${url}`))
     .flatMap((json) =>
       Task.from(
         () => fs.readFile(mp3Filename),
@@ -297,6 +298,7 @@ function summaryTranscription(url: string) {
         (e) => ChunkVideoFailedError({ meta: { filename, error: e } })
       )
     )
+    .tap(() => log.info(`Chunked video: ${mp3Filename}`))
     .flatMap(() =>
       Task.from(
         async () => {
@@ -323,6 +325,7 @@ function summaryTranscription(url: string) {
       fs.rm(filename, { force: true });
       fs.rm(jsonFilename, { force: true });
     })
+    .tap(() => log.info(`transcribing video`))
     .flatMap((files) =>
       Task.parallel(files.map(OpenAI.transcribe)).map((transcriptions) =>
         transcriptions.join(" ")
@@ -340,37 +343,38 @@ function summaryTranscription(url: string) {
             summary,
           } as TranscriptionResponse)
       )
-    )
-    .tap(() => log.info(`provided summary for video: ${filename}`));
+    );
 }
 
-const transcriptionPrompt = `You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript, provide all the key points, and a study guide for the video.
-        Requirements:
-        - Provide a summary of the video
-        - Provide a list of key points for the video
-        - Provide a study guide for the video
-        - Provide a list of questions for the video
+const transcriptionPrompt =
+`You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript, provide all the key points, and a study guide for the video.
+Be aware that the transcript may contain errors. If you notice any errors, please correct them. It may also be chunked into multiple parts. Please combine the parts into a single transcript.
 
-        Example:
-        ---
-        Transcript: {{transcript}}
+Requirements:
+- Provide a summary of the video
+- Provide a list of key points for the video
+- Provide a study guide for the video
+- Provide a list of questions for the video
+
+Example:
+---
+Transcript: {{transcript}}
 
 
-        Response:
-        ---
-        Summary:
-        {{summary}}
-        Key Points:
-        - {{key_point_1}}
-        - {{key_point_2}}
-        ...
-        Study Guide:
-        {{study_guide}}
-        Questions:
-        - {{question_1}}
-        - {{question_2}}
-        ...
-      `;
+Response:
+---
+Summary:
+{{summary}}
+Key Points:
+- {{key_point_1}}
+- {{key_point_2}}
+...
+Study Guide:
+{{study_guide}}
+Questions:
+- {{question_1}}
+- {{question_2}}
+...`;
 
 export const BibleTools = {
   search,
