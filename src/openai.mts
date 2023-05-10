@@ -9,6 +9,8 @@ import { DomainError } from "./domain-error.js";
 type OpenAIEmbedFailedError = DomainError<"OpenAIEmbedFailedError">;
 const OpenAIEmbedFailedError = DomainError.make("OpenAIEmbedFailedError");
 
+type NonEmptyArray<A> = [A, ...A[]];
+
 function embed(text: string): Task<OpenAIEmbedFailedError, Embedding> {
   return Task.from(
     () =>
@@ -45,6 +47,14 @@ const OpenAIChatFailedError = DomainError.make("OpenAIChatFailedError");
 type OpenAIChatNoChoicesError = DomainError<"OpenAIChatNoChoicesError">;
 const OpenAIChatNoChoicesError = DomainError.make("OpenAIChatNoChoicesError");
 
+type OpenAIChatResponse = {
+  choices: {
+    message: {
+      content: string;
+    };
+  }[];
+};
+
 function chat(messages: Message[]) {
   return Task.from(
     () =>
@@ -59,13 +69,7 @@ function chat(messages: Message[]) {
           messages,
           temperature: 0.2,
         }),
-      }).then((res) => res.body.json()) as Promise<{
-        choices: {
-          message: {
-            content: string;
-          };
-        }[];
-      }>,
+      }).then((res) => res.body.json()) as Promise<OpenAIChatResponse>,
     (e) =>
       OpenAIChatFailedError({
         meta: e,
@@ -80,7 +84,8 @@ function chat(messages: Message[]) {
           OpenAIChatNoChoicesError({
             meta: res,
           }),
-        (x) => res.choices.length > 0
+        (x): x is NonEmptyArray<OpenAIChatResponse["choices"][number]> =>
+          x.length > 0
       ).map((x) => x[0].message.content)
     );
 }
