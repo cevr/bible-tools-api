@@ -196,13 +196,27 @@ type TranscriptionResponse = {
 
 function summaryTranscription(url: string) {
   const id = url.split("v=")[1];
-  const filename = path.resolve(audioPath, `${id}.m4a`);
+  const filename = path.resolve(audioPath, `${id}-${Date.now()}.m4a`);
+  const jsonFilename = path.resolve(audioPath, `${id}-${Date.now()}.json`);
   return Task.from(
     () =>
-      ytdl.exec(url, {
+      ytdl(url, {
         format: "ba",
-        output: filename,
-      }),
+        dumpSingleJson: true,
+      })
+        .then(async (info) => {
+          await fs
+            .mkdir(path.dirname(audioPath), { recursive: true })
+            .catch(() => {});
+          await fs.writeFile(jsonFilename, JSON.stringify(info));
+        })
+        .then(() =>
+          ytdl.exec("", {
+            loadInfoJson: jsonFilename,
+            format: "ba",
+            output: filename,
+          })
+        ),
     (e) => YoutubeDownloadFailedError({ meta: { url, error: e } })
   )
     .tap(() => log.info(`Downloaded video: ${url}`))
