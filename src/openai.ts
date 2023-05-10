@@ -1,10 +1,10 @@
 import { File, FormData, request } from "undici";
 import { Result, Task } from "ftld";
 
-import { Embedding } from "./api.mjs";
-import { env } from "./env.mjs";
-import { log } from "./index.mjs";
-import { DomainError } from "./domain-error.js";
+import { Embedding } from "./api";
+import { env } from "./env";
+import { log } from "./index";
+import { DomainError } from "./domain-error";
 
 type OpenAIEmbedFailedError = DomainError<"OpenAIEmbedFailedError">;
 const OpenAIEmbedFailedError = DomainError.make("OpenAIEmbedFailedError");

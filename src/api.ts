@@ -8,12 +8,12 @@ import {
   Github,
   GithubCouldNotGetDirError,
   GithubCouldNotGetError,
-} from "./github-cms.mjs";
+} from "./github-cms";
 
-import { OpenAI } from "./openai.mjs";
-import { TaskQueue } from "./task-queue.mjs";
-import { DomainError } from "./domain-error.js";
-import { log } from "./index.mjs";
+import { OpenAI } from "./openai";
+import { TaskQueue } from "./task-queue";
+import { DomainError } from "./domain-error";
+import { log } from "./index";
 
 export type Embedding = number[];
 export type LabeledEmbedding = {

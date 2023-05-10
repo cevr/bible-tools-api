@@ -3,9 +3,9 @@ import Fastify from "fastify";
 import { Result } from "ftld";
 import * as z from "zod";
 
-import { BibleTools } from "./api.mjs";
+import { BibleTools } from "./api";
 
-import { env } from "./env.mjs";
+import { env } from "./env";
 
 const pretty = {
   transport: {

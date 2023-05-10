@@ -1,7 +1,7 @@
 import { request } from "undici";
 import { Task } from "ftld";
 
-import { log } from "./index.mjs";
+import { log } from "./index";
 
 interface GitHubFile {
   name: string;
