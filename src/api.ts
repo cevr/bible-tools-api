@@ -250,7 +250,7 @@ function summaryTranscription(url: string) {
         (e) => ReadVideoFailedError({ meta: { filename, error: e } })
       ).map((buffer) => ({ json, buffer }))
     )
-    .flatMap(({ json, buffer }) =>
+    .flatMap(async ({ json, buffer }) =>
       // split into chunks
       {
         const duration = json.duration;
@@ -261,6 +261,8 @@ function summaryTranscription(url: string) {
         // calculate the duration of each chunk
         const chunkDuration = Math.ceil(duration / numChunks);
         log.info(`Read video: ${filename}, ${buffer.length / 1000000} MB`);
+
+        await fs.mkdir(chunkDir, { recursive: true });
 
         return Task.from(
           async () => {
