@@ -214,8 +214,7 @@ function summaryTranscription(url: string) {
   return Task.from(
     () =>
       ytdl(url, {
-        format: "ba",
-        audioFormat: "mp3",
+        format: "mp3",
         dumpSingleJson: true,
       }),
     () => YoutubeDownloadJSONFailedError({ meta: { url } })
@@ -234,8 +233,7 @@ function summaryTranscription(url: string) {
       Task.from(
         async () => {
           await ytdl.exec("", {
-            format: "ba",
-            audioFormat: "mp3",
+            format: "mp3",
             loadInfoJson: jsonFilename,
             output: filename,
           });
