@@ -82,6 +82,7 @@ function transcribe(audio: Buffer) {
       request("https//api.openai.com/v1/audio/transcriptions", {
         method: "POST",
         headers: {
+          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${env.OPENAI_API_KEY}`,
         },
         body: formData,
@@ -92,7 +93,7 @@ function transcribe(audio: Buffer) {
       OpenAITranscribeFailedError({
         meta: e,
       })
-  ).tapErr(log.error);
+  ).tapErr((err) => log.error(err));
 }
 
 function makeUserMessage(content: string): Message {
