@@ -115,8 +115,8 @@ function transcribe(audio: Buffer) {
       request("https://api.openai.com/v1/audio/transcriptions", {
         method: "POST",
         headers: {
-          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+          "user-agent": "bible-tools",
         },
         body: formData,
       }).then((res) => res.body.json()) as Promise<{
