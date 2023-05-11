@@ -1,4 +1,4 @@
-import { Result, Task } from "ftld";
+import { Result, Task, Do } from "ftld";
 import ytdl from "youtube-dl-exec";
 import path from "path";
 import { promises as fs } from "fs";
@@ -207,32 +207,36 @@ type TranscriptionResponse = {
 };
 
 function summaryTranscription(url: string) {
-  const audioPath = path.resolve(process.cwd(), "tmp", "audio");
-  const id = url.split("v=")[1];
-  const now = Date.now();
-  const chunkDir = path.resolve(audioPath, `${id}-${now}`);
-  const filename = path.resolve(audioPath, `${id}-${now}.m4a`);
-  const mp3Filename = path.resolve(audioPath, `${id}-${now}.mp3`);
-  const jsonFilename = path.resolve(audioPath, `${id}-${now}.json`);
-  return Task.from(
-    () =>
-      ytdl(url, {
-        format: "ba",
-        dumpSingleJson: true,
-      }),
-    (e) => YoutubeDownloadJSONFailedError({ meta: { url, error: e } })
-  )
-    .flatMap((json) =>
+  return Do(async function* ($) {
+    const audioPath = path.resolve(process.cwd(), "tmp", "audio");
+    const id = url.split("v=")[1];
+    const now = Date.now();
+    const chunkDir = path.resolve(audioPath, `${id}-${now}`);
+    const filename = path.resolve(audioPath, `${id}-${now}.m4a`);
+    const mp3Filename = path.resolve(audioPath, `${id}-${now}.mp3`);
+    const jsonFilename = path.resolve(audioPath, `${id}-${now}.json`);
+    const json = yield* $(
+      Task.from(
+        () =>
+          ytdl(url, {
+            format: "ba",
+            dumpSingleJson: true,
+          }),
+        (e) => YoutubeDownloadJSONFailedError({ meta: { url, error: e } })
+      )
+    );
+
+    yield* $(
       Task.from(
         async () => {
           await fs.mkdir(path.dirname(jsonFilename), { recursive: true });
           await fs.writeFile(jsonFilename, JSON.stringify(json));
-          return json;
         },
         (e) => YoutubeSaveJSONFailedError({ meta: { url, error: e } })
       )
-    )
-    .flatMap((json) =>
+    );
+
+    yield* $(
       Task.from(
         async () => {
           await ytdl.exec("", {
@@ -240,13 +244,14 @@ function summaryTranscription(url: string) {
             loadInfoJson: jsonFilename,
             output: filename,
           });
-          return json;
         },
         (e) => YoutubeDownloadFailedError({ meta: { url, error: e } })
       )
-    )
-    .tap(() => log.info(`Downloaded video: ${url}`))
-    .flatMap((json) =>
+    );
+
+    log.info(`Downloaded video: ${url}`);
+
+    yield* $(
       Task.from(
         async () => {
           await execa(path.resolve(process.cwd(), "ffmpeg"), [
@@ -263,15 +268,18 @@ function summaryTranscription(url: string) {
         },
         (e) => ConvertVideoFailedError({ meta: { url, error: e } })
       )
-    )
-    .tap(() => log.info(`Converted video to mp3: ${url}`))
-    .flatMap((json) =>
+    );
+
+    log.info(`Converted video to mp3: ${url}`);
+
+    const buffer = yield* $(
       Task.from(
         () => fs.readFile(mp3Filename),
         (e) => ReadVideoFailedError({ meta: { filename, error: e } })
-      ).map((buffer) => ({ json, buffer }))
-    )
-    .flatMap(({ json, buffer }) =>
+      )
+    );
+
+    yield* $(
       Task.from(
         async () => {
           const duration = json.duration;
@@ -297,9 +305,10 @@ function summaryTranscription(url: string) {
         },
         (e) => ChunkVideoFailedError({ meta: { filename, error: e } })
       )
-    )
-    .tap(() => log.info(`Chunked video: ${mp3Filename}`))
-    .flatMap(() =>
+    );
+    log.info(`Chunked video: ${mp3Filename}`);
+
+    const files = yield* $(
       Task.from(
         async () => {
           const files = await fs.readdir(chunkDir);
@@ -314,8 +323,9 @@ function summaryTranscription(url: string) {
         },
         (error) => ReadChunkDirFailedError({ meta: { chunkDir, error } })
       )
-    )
-    .flatMap((files) =>
+    );
+
+    const chunks = yield* $(
       Task.parallel(
         files.map((file) =>
           Task.from(
@@ -324,35 +334,38 @@ function summaryTranscription(url: string) {
           )
         )
       )
-    )
-    .tap((files) => log.info(`Read chunks: ${files.length} chunks`))
-    .tap(() => {
-      fs.rmdir(chunkDir, { recursive: true });
-      fs.rm(filename, { force: true });
-      fs.rm(jsonFilename, { force: true });
-    })
-    .tap(() => log.info(`transcribing video`))
-    .flatMap((files) =>
-      Task.parallel(files.map(OpenAI.transcribe)).map((transcriptions) =>
+    );
+
+    log.info(`Read chunks: ${files.length} chunks`);
+
+    fs.rm(chunkDir, { recursive: true, force: true });
+    fs.rm(filename, { force: true });
+    fs.rm(jsonFilename, { force: true });
+
+    log.info(`transcribing video`);
+
+    const transcription = yield* $(
+      Task.parallel(chunks.map(OpenAI.transcribe)).map((transcriptions) =>
         transcriptions.join(" ")
       )
-    )
-    .tap(() => log.info(`Transcribed video: ${filename}`))
-    .flatMap((transcription) => {
-      const chunks = OpenAI.chunk(transcription);
-      if (chunks.length === 1) {
-        return OpenAI.chat([
-          OpenAI.chat.makeSystemMessage(transcriptionNoChunkPrompt),
-          OpenAI.chat.makeUserMessage(transcription),
-        ]).map(
-          (summary) =>
-            ({
-              transcription,
-              summary,
-            } as TranscriptionResponse)
-        );
-      }
-      return Task.parallel(
+    );
+    log.info(`Transcribed video: ${filename}`);
+
+    const summaryChunks = OpenAI.chunk(transcription);
+    if (summaryChunks.length === 1) {
+      return OpenAI.chat([
+        OpenAI.chat.makeSystemMessage(transcriptionNoChunkPrompt),
+        OpenAI.chat.makeUserMessage(transcription),
+      ]).map(
+        (summary) =>
+          ({
+            transcription,
+            summary,
+          } as TranscriptionResponse)
+      );
+    }
+    const responses = yield* $(
+      Task.parallel(
         OpenAI.chunk(transcription).map((chunked) =>
           OpenAI.chat([
             OpenAI.chat.makeSystemMessage(
@@ -362,20 +375,19 @@ function summaryTranscription(url: string) {
           ])
         )
       )
-        .flatMap((responses) =>
-          OpenAI.chat([
-            OpenAI.chat.makeSystemMessage(JoinChunksPrompt),
-            OpenAI.chat.makeUserMessage(responses.join("\n")),
-          ])
-        )
-        .map(
-          (summary) =>
-            ({
-              transcription,
-              summary,
-            } as TranscriptionResponse)
-        );
-    });
+    );
+
+    return OpenAI.chat([
+      OpenAI.chat.makeSystemMessage(JoinChunksPrompt),
+      OpenAI.chat.makeUserMessage(responses.join("\n")),
+    ]).map(
+      (summary) =>
+        ({
+          transcription,
+          summary,
+        } as TranscriptionResponse)
+    );
+  });
 }
 
 const transcriptionNoChunkPrompt = `You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript, provide all the key points, and a study guide for the video.
@@ -413,12 +425,14 @@ Requirements:
 - Provide a list of key points for the video
 - Provide a study guide for the video
 - Provide a list of questions for the video
+- The output must be as short as possible
+- The output must be in a format only you can understand
+- The output must be in a format that can be decoded later
 
 Example:
----
 Transcript: {{transcript}}
-Response:
 ---
+Unencoded Response:
 Summary:
 {{summary}}
 Key Points:
@@ -429,14 +443,9 @@ Study Guide:
 Questions:
 - {{question_1}}
 ...
-
----
-Please minimize the output to a language only you can understand and later decode. Please ensure that the output as short as possible.
-
-Requirements:
-- The output must be as short as possible
-- The output must be in a language only you can understand
-- The output must be in a format that can be decoded later
+--
+Encoded Response:
+{{encoded_response}}
 `;
 
 const JoinChunksPrompt = `You are a study helper. You will be given a chunked, minimized, and encoded study guide for an educational video. Your task is to join the chunks together into a single study guide.
