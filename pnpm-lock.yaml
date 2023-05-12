@@ -8,11 +8,11 @@ dependencies:
     specifier: ^4.17.0
     version: 4.17.0
   ftld:
-    specifier: ^0.51.2
-    version: 0.51.2
+    specifier: ^0.51.4
+    version: 0.51.4
   undici:
-    specifier: ^5.22.0
-    version: 5.22.0
+    specifier: ^5.22.1
+    version: 5.22.1
   youtube-dl-exec:
     specifier: ^2.4.1
     version: 2.4.1
@@ -22,8 +22,8 @@ dependencies:
 
 devDependencies:
   '@types/node':
-    specifier: ^18.16.7
-    version: 18.16.7
+    specifier: ^18.16.8
+    version: 18.16.8
   dotenv:
     specifier: ^16.0.3
     version: 16.0.3
@@ -341,8 +341,8 @@ packages:
       fastq: 1.15.0
     dev: true
 
-  /@types/node@18.16.7:
-    resolution: {integrity: sha512-MFg7ua/bRtnA1hYE3pVyWxGd/r7aMqjNOdHvlSsXV3n8iaeGKkOaPzpJh6/ovf4bEXWcojkeMJpTsq3mzXW4IQ==}
+  /@types/node@18.16.8:
+    resolution: {integrity: sha512-p0iAXcfWCOTCBbsExHIDFCfwsqFwBTgETJveKMT+Ci3LY9YqQCI91F5S+TB20+aRCXpcWfvx5Qr5EccnwCm2NA==}
     dev: true
 
   /abort-controller@3.0.0:
@@ -944,8 +944,8 @@ packages:
     dev: true
     optional: true
 
-  /ftld@0.51.2:
-    resolution: {integrity: sha512-EK3i3WVzODWNkekGRNbT+eReZghydxH8ENseGxWClTeSXJfwOxZgRrPfUw0K1l0l6dPsnikUDjpMtffz4mAqwQ==}
+  /ftld@0.51.4:
+    resolution: {integrity: sha512-jEslVoVG8S8g2PKNkQB6MpZoLuDCZ3QTlLjnilp2wq1ht7HlYUFxHTROJQtAiID3gJisQHmoGy57xia/WUxqsw==}
     dev: false
 
   /get-stream@6.0.1:
@@ -1879,8 +1879,8 @@ packages:
     hasBin: true
     dev: true
 
-  /undici@5.22.0:
-    resolution: {integrity: sha512-fR9RXCc+6Dxav4P9VV/sp5w3eFiSdOjJYsbtWfd4s5L5C4ogyuVpdKIVHeW0vV1MloM65/f7W45nR9ZxwVdyiA==}
+  /undici@5.22.1:
+    resolution: {integrity: sha512-Ji2IJhFXZY0x/0tVBXeQwgPlLWw13GVzpsWPQ3rV50IFMMof2I55PZZxtm4P6iNq+L5znYN9nSTAq0ZyE6lSJw==}
     engines: {node: '>=14.0'}
     dependencies:
       busboy: 1.6.0
