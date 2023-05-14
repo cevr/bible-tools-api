@@ -207,7 +207,7 @@ type TranscriptionResponse = {
 };
 
 function summaryTranscription(url: string) {
-  return Do(async function* ($) {
+  return Do(function* ($) {
     const audioPath = path.resolve(process.cwd(), "tmp", "audio");
     const id = url.split("v=")[1];
     const now = Date.now();

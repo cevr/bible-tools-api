@@ -8,22 +8,22 @@ dependencies:
     specifier: ^4.17.0
     version: 4.17.0
   ftld:
-    specifier: ^0.51.4
-    version: 0.51.4
+    specifier: ^0.53.1
+    version: 0.53.1
   undici:
     specifier: ^5.22.1
     version: 5.22.1
   youtube-dl-exec:
-    specifier: ^2.4.1
-    version: 2.4.1
+    specifier: ^2.4.2
+    version: 2.4.2
   zod:
     specifier: ^3.21.4
     version: 3.21.4
 
 devDependencies:
   '@types/node':
-    specifier: ^18.16.8
-    version: 18.16.8
+    specifier: ^18.16.9
+    version: 18.16.9
   dotenv:
     specifier: ^16.0.3
     version: 16.0.3
@@ -341,8 +341,8 @@ packages:
       fastq: 1.15.0
     dev: true
 
-  /@types/node@18.16.8:
-    resolution: {integrity: sha512-p0iAXcfWCOTCBbsExHIDFCfwsqFwBTgETJveKMT+Ci3LY9YqQCI91F5S+TB20+aRCXpcWfvx5Qr5EccnwCm2NA==}
+  /@types/node@18.16.9:
+    resolution: {integrity: sha512-IeB32oIV4oGArLrd7znD2rkHQ6EDCM+2Sr76dJnrHwv9OHBTTM6nuDLK9bmikXzPa0ZlWMWtRGo/Uw4mrzQedA==}
     dev: true
 
   /abort-controller@3.0.0:
@@ -944,8 +944,8 @@ packages:
     dev: true
     optional: true
 
-  /ftld@0.51.4:
-    resolution: {integrity: sha512-jEslVoVG8S8g2PKNkQB6MpZoLuDCZ3QTlLjnilp2wq1ht7HlYUFxHTROJQtAiID3gJisQHmoGy57xia/WUxqsw==}
+  /ftld@0.53.1:
+    resolution: {integrity: sha512-X5ZRy92BUhUJfiBrNaexZNMYMXZAW1EtkPnw7rkBPAZuH3SS4ZCzp/qlWFFeMY9FdSY7riOGm48Msqg2q+f60w==}
     dev: false
 
   /get-stream@6.0.1:
@@ -1953,8 +1953,8 @@ packages:
       fd-slicer: 1.1.0
     dev: true
 
-  /youtube-dl-exec@2.4.1:
-    resolution: {integrity: sha512-k7JvIZ2H/d2/Ko6KUACEGaDLsCMZCc117u8i3fSmEaLhOlwrtW+X4UC0gLZdBXd9F7iulICEacAEHN3WufySvg==}
+  /youtube-dl-exec@2.4.2:
+    resolution: {integrity: sha512-0anzwaVtljlTxcHUMlyYkef9jTM52cehvIexORVs4gWgLJ5S4i0PlzGUpn2f/eo1/WWB7rNPztz/BXt0bBoC1A==}
     engines: {node: '>= 14'}
     requiresBuild: true
     dependencies:
