@@ -8,8 +8,8 @@ dependencies:
     specifier: ^4.17.0
     version: 4.17.0
   ftld:
-    specifier: ^0.53.1
-    version: 0.53.1
+    specifier: ^0.57.2
+    version: 0.57.2
   undici:
     specifier: ^5.22.1
     version: 5.22.1
@@ -22,8 +22,8 @@ dependencies:
 
 devDependencies:
   '@types/node':
-    specifier: ^18.16.9
-    version: 18.16.9
+    specifier: ^18.16.13
+    version: 18.16.13
   dotenv:
     specifier: ^16.0.3
     version: 16.0.3
@@ -341,8 +341,8 @@ packages:
       fastq: 1.15.0
     dev: true
 
-  /@types/node@18.16.9:
-    resolution: {integrity: sha512-IeB32oIV4oGArLrd7znD2rkHQ6EDCM+2Sr76dJnrHwv9OHBTTM6nuDLK9bmikXzPa0ZlWMWtRGo/Uw4mrzQedA==}
+  /@types/node@18.16.13:
+    resolution: {integrity: sha512-uZRomboV1vBL61EBXneL4j9/hEn+1Yqa4LQdpGrKmXFyJmVfWc9JV9+yb2AlnOnuaDnb2PDO3hC6/LKmzJxP1A==}
     dev: true
 
   /abort-controller@3.0.0:
@@ -944,8 +944,8 @@ packages:
     dev: true
     optional: true
 
-  /ftld@0.53.1:
-    resolution: {integrity: sha512-X5ZRy92BUhUJfiBrNaexZNMYMXZAW1EtkPnw7rkBPAZuH3SS4ZCzp/qlWFFeMY9FdSY7riOGm48Msqg2q+f60w==}
+  /ftld@0.57.2:
+    resolution: {integrity: sha512-KdyLmBUXgXO668l0I9z7epZ40wH10I+REm5+fR+d8isfd8aZhSAOMANqVDtZGd7S9UgGCf86QOiDAOuHowVcYA==}
     dev: false
 
   /get-stream@6.0.1:

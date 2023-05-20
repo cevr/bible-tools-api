@@ -1,5 +1,5 @@
 import { File, FormData, request } from "undici";
-import { Result, Task } from "ftld";
+import { AsyncTask, Result, Task } from "ftld";
 
 import { Embedding } from "./api";
 import { env } from "./env";
@@ -11,7 +11,7 @@ const OpenAIEmbedFailedError = DomainError.make("OpenAIEmbedFailedError");
 
 type NonEmptyArray<A> = [A, ...A[]];
 
-function embed(text: string): Task<OpenAIEmbedFailedError, Embedding> {
+function embed(text: string): AsyncTask<OpenAIEmbedFailedError, Embedding> {
   return Task.from(
     () =>
       request("https://api.openai.com/v1/embeddings", {
@@ -26,9 +26,7 @@ function embed(text: string): Task<OpenAIEmbedFailedError, Embedding> {
         }),
       })
         .then((res) => res.body.json())
-        .then(
-          (res) => res.data[0].embedding as Embedding
-        ) as Promise<Embedding>,
+        .then((res) => res.data[0].embedding as Embedding),
     (err) =>
       OpenAIEmbedFailedError({
         meta: err,
@@ -64,26 +62,26 @@ const MaximumTokensExceededError = DomainError.make(
 
 function chat(
   messages: (Message[] | Message)[]
-): Task<
+): AsyncTask<
   MaximumTokensExceededError | OpenAIChatFailedError | OpenAIChatNoChoicesError,
   string
 > {
-  const totalTokens = messages
-    .flat()
-    .reduce((total, message) => total + countTokens(message.content), 0);
-  if (totalTokens > maxTokens) {
-    return Task.Err(
-      MaximumTokensExceededError({
-        meta: {
-          totalTokens,
-          maxTokens,
-        },
-      })
-    );
-  }
   return Task.from(
-    () =>
-      request("https://api.openai.com/v1/chat/completions", {
+    async () => {
+      const totalTokens = messages
+        .flat()
+        .reduce((total, message) => total + countTokens(message.content), 0);
+      if (totalTokens > maxTokens) {
+        return Task.Err(
+          MaximumTokensExceededError({
+            meta: {
+              totalTokens,
+              maxTokens,
+            },
+          })
+        );
+      }
+      return request("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -94,7 +92,8 @@ function chat(
           messages: messages.flat(),
           temperature: 0.2,
         }),
-      }).then((res) => res.body.json()) as Promise<OpenAIChatResponse>,
+      }).then((res) => res.body.json() as OpenAIChatResponse);
+    },
     (e) =>
       OpenAIChatFailedError({
         meta: e,

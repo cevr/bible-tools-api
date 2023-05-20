@@ -133,12 +133,7 @@ function preload() {
   Task.sequential([getEgwEmbeddings, getBibleEmbeddings]).run();
 }
 
-async function getBibleEmbeddings(): Promise<
-  Result<
-    GithubCouldNotGetDirError | GithubCouldNotGetError,
-    LabeledEmbedding[][]
-  >
-> {
+async function getBibleEmbeddings() {
   if (bibleEmbeddings) return Result.Ok(bibleEmbeddings);
   return Queue.add("bible", () =>
     Github.getDir<
@@ -380,13 +375,10 @@ function summaryTranscription(url: string) {
     return OpenAI.chat([
       OpenAI.chat.makeSystemMessage(JoinChunksPrompt),
       OpenAI.chat.makeUserMessage(responses.join("\n")),
-    ]).map(
-      (summary) =>
-        ({
-          transcription,
-          summary,
-        } as TranscriptionResponse)
-    );
+    ]).map((summary) => ({
+      transcription,
+      summary,
+    }));
   });
 }
 

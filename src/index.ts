@@ -63,14 +63,16 @@ fastify.get("/search", async (req, reply) => {
     const data = yield* $(BibleTools.search(q));
     log.info(data);
     reply.send(data).status(200);
-  }).tapErr((err) => {
-    log.error(err);
-    reply
-      .send({
-        error: "Could not search",
-      })
-      .status(500);
-  });
+  })
+    .tapErr((err) => {
+      log.error(err);
+      reply
+        .send({
+          error: "Could not search",
+        })
+        .status(500);
+    })
+    .run();
 });
 
 const transcribeSchema = schemaToResult(
@@ -82,17 +84,21 @@ const transcribeSchema = schemaToResult(
 fastify.get("/transcribe", async (req, reply) => {
   await Do(function* ($) {
     const { url } = yield* $(transcribeSchema(req.query));
-    const data = yield* $(BibleTools.summaryTranscription(url));
-    log.info(data);
-    reply.send(data).status(200);
-  }).tapErr((err) => {
-    log.error(err);
-    reply
-      .send({
-        message: "Could not transcribe",
-        error: err,
-      })
-      .status(500);
+    return BibleTools.summaryTranscription(url);
+  }).match({
+    Ok: (data) => {
+      log.info(data);
+      reply.send(data).status(200);
+    },
+    Err: (err) => {
+      log.error(err);
+      reply
+        .send({
+          message: "Could not transcribe",
+          error: err,
+        })
+        .status(500);
+    },
   });
 });
 

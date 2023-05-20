@@ -1,7 +1,8 @@
 import { request } from "undici";
-import { Task } from "ftld";
+import { Do, Task } from "ftld";
 
 import { log } from "./index";
+import { AsyncTask } from "ftld";
 
 interface GitHubFile {
   name: string;
@@ -27,15 +28,17 @@ export class GithubCouldNotGetError extends Error {
   }
 }
 
-function get<T>(path: string): Task<GithubCouldNotGetError, T> {
+function get<T>(path: string): AsyncTask<GithubCouldNotGetError, T> {
   const url = `https://raw.githubusercontent.com/cevr/cms/main/${path}`;
   return Task.from(
-    () =>
-      request(url, {
+    async () => {
+      const x = await request(url, {
         headers: {
           "user-agent": "cvr-bible-tools",
         },
-      }).then((res) => res.body.json()),
+      }).then((res) => res.body.json());
+      return x;
+    },
     (err) => {
       log.error(err);
       return new GithubCouldNotGetError(`Could not fetch ${url}`);
@@ -50,40 +53,47 @@ export class GithubCouldNotGetDirError extends Error {
   }
 }
 
-function getDir<T>(path: string) {
-  const url = `https://api.github.com/repos/cevr/cms/contents/${path}`;
-  const files = Task.from(
-    () => {
-      return request(url, {
-        headers: {
-          "user-agent": "cvr-bible-tools",
+function getDir<T>(path: string): AsyncTask<GithubCouldNotGetDirError, T[]> {
+  return Do(function* ($) {
+    const url = `https://api.github.com/repos/cevr/cms/contents/${path}`;
+    const paths = yield* $(
+      Task.from(
+        () => {
+          return request(url, {
+            headers: {
+              "user-agent": "cvr-bible-tools",
+            },
+          })
+            .then((res) => res.body.json())
+            .then((res) => [res].flat() as GitHubFile[]) as Promise<
+            GitHubFile[]
+          >;
         },
-      })
-        .then((res) => res.body.json())
-        .then((res) => [res].flat() as GitHubFile[]) as Promise<GitHubFile[]>;
-    },
-    (err) => {
-      log.error(`path: Could not fetch ${url}`);
-      log.error(err);
-      return new GithubCouldNotGetDirError(`path: Could not fetch ${url}`);
-    }
-  );
-
-  let count = 0;
-  return files.flatMap((files) =>
-    Task.sequential(
-      files.map((file) =>
-        get<T>(`${path}/${file.name}`)
-          .tap(() => {
-            count++;
-            log.info(`${path}: Loaded ${count}/${files.length} files`);
-          })
-          .tapErr(() => {
-            log.error(`${path}: Failed to load ${file.name}`);
-          })
+        (err) => {
+          log.error(`path: Could not fetch ${url}`);
+          log.error(err);
+          return new GithubCouldNotGetDirError(`path: Could not fetch ${url}`);
+        }
       )
-    )
-  );
+    );
+
+    let count = 0;
+    const files = yield* $(
+      Task.sequential(
+        paths.map((file) =>
+          get<T>(`${path}/${file.name}`)
+            .tap(() => {
+              count++;
+              log.info(`${path}: Loaded ${count}/${paths.length} files`);
+            })
+            .tapErr(() => {
+              log.error(`${path}: Failed to load ${file.name}`);
+            })
+        )
+      )
+    );
+    return files as T[];
+  });
 }
 
 export const Github = {
