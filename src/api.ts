@@ -175,26 +175,14 @@ function search(query: string) {
   );
 }
 
-const YoutubeDownloadJSONFailedError = DomainError.make(
-  "YoutubeDownloadJSONFailedError"
-);
-const YoutubeSaveJSONFailedError = DomainError.make(
-  "YoutubeSaveJSONFailedError"
-);
-
-const ChunkVideoFailedError = DomainError.make("ChunkVideoFailedError");
-const ReadChunkDirFailedError = DomainError.make("ReadChunkDirFailedError");
-const ReadChunksFailedError = DomainError.make("ReadChunkFailedError");
-
-type YoutubeDownloadFailedError = DomainError<"YoutubeDownloadFailedError">;
-const YoutubeDownloadFailedError = DomainError.make(
-  "YoutubeDownloadFailedError"
-);
-
-type ReadVideoFailedError = DomainError<"ReadVideoFailedError">;
-const ReadVideoFailedError = DomainError.make("ReadVideoFailedError");
-
-const ConvertVideoFailedError = DomainError.make("ConvertVideoFailedError");
+class YoutubeDownloadJSONFailedError extends DomainError {}
+class YoutubeSaveJSONFailedError extends DomainError {}
+class YoutubeDownloadFailedError extends DomainError {}
+class ChunkVideoFailedError extends DomainError {}
+class ReadChunkDirFailedError extends DomainError {}
+class ReadChunksFailedError extends DomainError {}
+class ReadVideoFailedError extends DomainError {}
+class ConvertVideoFailedError extends DomainError {}
 
 type TranscriptionResponse = {
   summary: string;
@@ -217,7 +205,7 @@ function summaryTranscription(url: string) {
             format: "ba",
             dumpSingleJson: true,
           }),
-        (e) => YoutubeDownloadJSONFailedError({ meta: { url, error: e } })
+        (e) => new YoutubeDownloadJSONFailedError({ meta: { url, error: e } })
       )
     );
 
@@ -227,7 +215,7 @@ function summaryTranscription(url: string) {
           await fs.mkdir(path.dirname(jsonFilename), { recursive: true });
           await fs.writeFile(jsonFilename, JSON.stringify(json));
         },
-        (e) => YoutubeSaveJSONFailedError({ meta: { url, error: e } })
+        (e) => new YoutubeSaveJSONFailedError({ meta: { url, error: e } })
       )
     );
 
@@ -240,7 +228,7 @@ function summaryTranscription(url: string) {
             output: filename,
           });
         },
-        (e) => YoutubeDownloadFailedError({ meta: { url, error: e } })
+        (e) => new YoutubeDownloadFailedError({ meta: { url, error: e } })
       )
     );
 
@@ -261,7 +249,7 @@ function summaryTranscription(url: string) {
           ]);
           return json;
         },
-        (e) => ConvertVideoFailedError({ meta: { url, error: e } })
+        (e) => new ConvertVideoFailedError({ meta: { url, error: e } })
       )
     );
 
@@ -270,7 +258,7 @@ function summaryTranscription(url: string) {
     const buffer = yield* $(
       Task.from(
         () => fs.readFile(mp3Filename),
-        (e) => ReadVideoFailedError({ meta: { filename, error: e } })
+        (e) => new ReadVideoFailedError({ meta: { filename, error: e } })
       )
     );
 
@@ -298,7 +286,7 @@ function summaryTranscription(url: string) {
             path.resolve(chunkDir, "%03d.mp3"),
           ]);
         },
-        (e) => ChunkVideoFailedError({ meta: { filename, error: e } })
+        (e) => new ChunkVideoFailedError({ meta: { filename, error: e } })
       )
     );
     log.info(`Chunked video: ${mp3Filename}`);
@@ -316,7 +304,7 @@ function summaryTranscription(url: string) {
               return aNum - bNum;
             });
         },
-        (error) => ReadChunkDirFailedError({ meta: { chunkDir, error } })
+        (error) => new ReadChunkDirFailedError({ meta: { chunkDir, error } })
       )
     );
 
@@ -325,7 +313,7 @@ function summaryTranscription(url: string) {
         files.map((file) =>
           Task.from(
             () => fs.readFile(file),
-            () => ReadChunksFailedError({ meta: { file } })
+            () => new ReadChunksFailedError({ meta: { file } })
           )
         )
       )

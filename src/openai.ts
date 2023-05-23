@@ -6,12 +6,11 @@ import { env } from "./env";
 import { log } from "./index";
 import { DomainError } from "./domain-error";
 
-type OpenAIEmbedFailedError = DomainError<"OpenAIEmbedFailedError">;
-const OpenAIEmbedFailedError = DomainError.make("OpenAIEmbedFailedError");
+class OpenAIEmbedFailedError extends DomainError {}
 
 type NonEmptyArray<A> = [A, ...A[]];
 
-function embed(text: string): AsyncTask<OpenAIEmbedFailedError, Embedding> {
+function embed(text: string) {
   return Task.from(
     () =>
       request("https://api.openai.com/v1/embeddings", {
@@ -28,7 +27,7 @@ function embed(text: string): AsyncTask<OpenAIEmbedFailedError, Embedding> {
         .then((res) => res.body.json())
         .then((res) => res.data[0].embedding as Embedding),
     (err) =>
-      OpenAIEmbedFailedError({
+      new OpenAIEmbedFailedError({
         meta: err,
       })
   ).tapErr((e) => log.error(e));
@@ -39,11 +38,8 @@ type Message = {
   content: string;
 };
 
-type OpenAIChatFailedError = DomainError<"OpenAIChatFailedError">;
-const OpenAIChatFailedError = DomainError.make("OpenAIChatFailedError");
-
-type OpenAIChatNoChoicesError = DomainError<"OpenAIChatNoChoicesError">;
-const OpenAIChatNoChoicesError = DomainError.make("OpenAIChatNoChoicesError");
+class OpenAIChatFailedError extends DomainError {}
+class OpenAIChatNoChoicesError extends DomainError {}
 
 type OpenAIChatResponse = {
   choices?: {
@@ -55,25 +51,17 @@ type OpenAIChatResponse = {
 
 const countTokens = (str: string) => str.split(" ").length;
 
-type MaximumTokensExceededError = DomainError<"MaximumTokensExceededError">;
-const MaximumTokensExceededError = DomainError.make(
-  "MaximumTokensExceededError"
-);
+class MaximumTokensExceededError extends DomainError {}
 
-function chat(
-  messages: (Message[] | Message)[]
-): AsyncTask<
-  MaximumTokensExceededError | OpenAIChatFailedError | OpenAIChatNoChoicesError,
-  string
-> {
+function chat(messages: (Message[] | Message)[]) {
   return Task.from(
     async () => {
       const totalTokens = messages
         .flat()
         .reduce((total, message) => total + countTokens(message.content), 0);
       if (totalTokens > maxTokens) {
-        return Task.Err(
-          MaximumTokensExceededError({
+        return Result.Err(
+          new MaximumTokensExceededError({
             meta: {
               totalTokens,
               maxTokens,
@@ -95,7 +83,7 @@ function chat(
       }).then((res) => res.body.json() as OpenAIChatResponse);
     },
     (e) =>
-      OpenAIChatFailedError({
+      new OpenAIChatFailedError({
         meta: e,
       })
   )
@@ -110,21 +98,15 @@ function chat(
           Required<OpenAIChatResponse>["choices"][number]
         > => !!x && x.length > 0,
         () =>
-          OpenAIChatNoChoicesError({
+          new OpenAIChatNoChoicesError({
             meta: res,
           })
       ).map((x) => x[0].message.content)
     );
 }
 
-type OpenAITranscribeFailedError = DomainError<"OpenAITranscribeFailedError">;
-const OpenAITranscribeFailedError = DomainError.make(
-  "OpenAITranscribeFailedError"
-);
-
-const OpenAITranscribeNoTextError = DomainError.make(
-  "OpenAITranscribeNoTextError"
-);
+class OpenAITranscribeFailedError extends DomainError {}
+class OpenAITranscribeNoTextError extends DomainError {}
 
 function transcribe(audio: Buffer) {
   const formData = new FormData();
@@ -148,7 +130,7 @@ function transcribe(audio: Buffer) {
       }>,
 
     (e) =>
-      OpenAITranscribeFailedError({
+      new OpenAITranscribeFailedError({
         meta: e,
       })
   )
@@ -157,7 +139,7 @@ function transcribe(audio: Buffer) {
       Result.fromPredicate(
         res.text,
         (x): x is NonNullable<typeof x> => !!x,
-        () => OpenAITranscribeNoTextError()
+        () => new OpenAITranscribeNoTextError()
       )
     )
     .tap((res) => log.info(res))

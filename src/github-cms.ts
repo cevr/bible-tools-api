@@ -1,8 +1,8 @@
 import { request } from "undici";
-import { Do, Task } from "ftld";
+import { Do, Task, AsyncTask } from "ftld";
 
 import { log } from "./index";
-import { AsyncTask } from "ftld";
+import { DomainError } from "./domain-error";
 
 interface GitHubFile {
   name: string;
@@ -21,39 +21,29 @@ interface GitHubFile {
   };
 }
 
-export class GithubCouldNotGetError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "GithubCouldNotGetError";
-  }
-}
+export class GithubCouldNotGetError extends DomainError {}
 
-function get<T>(path: string): AsyncTask<GithubCouldNotGetError, T> {
+function get<T>(path: string) {
   const url = `https://raw.githubusercontent.com/cevr/cms/main/${path}`;
   return Task.from(
-    async () => {
-      const x = await request(url, {
+    () => {
+      return request(url, {
         headers: {
           "user-agent": "cvr-bible-tools",
         },
-      }).then((res) => res.body.json());
-      return x;
+      }).then((res) => res.body.json()) as Promise<T>;
     },
-    (err) => {
-      log.error(err);
-      return new GithubCouldNotGetError(`Could not fetch ${url}`);
-    }
-  );
+    (err) =>
+      new GithubCouldNotGetError({
+        message: `Could not fetch ${url}`,
+        meta: err,
+      })
+  ).tapErr((err) => log.error(err));
 }
 
-export class GithubCouldNotGetDirError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "GithubCouldNotGetDirError";
-  }
-}
+export class GithubCouldNotGetDirError extends DomainError {}
 
-function getDir<T>(path: string): AsyncTask<GithubCouldNotGetDirError, T[]> {
+function getDir<T>(path: string) {
   return Do(function* ($) {
     const url = `https://api.github.com/repos/cevr/cms/contents/${path}`;
     const paths = yield* $(
@@ -72,7 +62,10 @@ function getDir<T>(path: string): AsyncTask<GithubCouldNotGetDirError, T[]> {
         (err) => {
           log.error(`path: Could not fetch ${url}`);
           log.error(err);
-          return new GithubCouldNotGetDirError(`path: Could not fetch ${url}`);
+          return new GithubCouldNotGetDirError({
+            meta: err,
+            message: `Could not fetch ${url}`,
+          });
         }
       )
     );

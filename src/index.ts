@@ -102,7 +102,7 @@ fastify.get("/transcribe", async (req, reply) => {
   });
 });
 
-BibleTools.preload();
+env.NODE_ENV !== "development" && BibleTools.preload();
 
 // Run the server!
 fastify.listen(
@@ -115,6 +115,20 @@ fastify.listen(
       fastify.log.error(err);
       process.exit(1);
     }
-    fastify.log.info("Loading embeddings...");
   }
 );
+
+process.on("uncaughtException", (err) => {
+  log.error(err);
+  process.exit(1);
+});
+
+process.on("SIGINT", () => {
+  log.info("SIGINT signal received.");
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  log.info("SIGTERM signal received.");
+  process.exit(0);
+});

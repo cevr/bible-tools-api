@@ -7,14 +7,14 @@
   "scripts": {
     "binaries": "ffbinaries ffmpeg",
     "build": "tsup",
-    "dev": "tsx watch src/index.mts --clear-screen=false",
-    "start": "node --max-old-space-size=4096 dist/index.js"
+    "dev": "tsx watch src/index.ts --clear-screen=false",
+    "start": "node --max-old-space-size=4096 --enable-source-maps dist/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^18.16.13",
+    "@types/node": "^20.2.3",
     "dotenv": "^16.0.3",
     "ffbinaries": "^1.1.5",
     "pino-pretty": "^10.0.0",
@@ -23,9 +23,10 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
+    "cheerio": "1.0.0-rc.12",
     "execa": "^7.1.1",
     "fastify": "^4.17.0",
-    "ftld": "^0.57.2",
+    "ftld": "^0.57.9",
     "undici": "^5.22.1",
     "youtube-dl-exec": "^2.4.2",
     "zod": "^3.21.4"
