@@ -23,9 +23,6 @@ dependencies:
   ftld:
     specifier: ^0.58.1
     version: 0.58.1
-  sqlite-vss:
-    specifier: 0.1.1-alpha.13
-    version: 0.1.1-alpha.13
   stream-json:
     specifier: ^1.8.0
     version: 1.8.0
@@ -2610,38 +2607,6 @@ packages:
   /split2@4.2.0:
     resolution: {integrity: sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==}
     engines: {node: '>= 10.x'}
-
-  /sqlite-vss-darwin-arm64@0.1.1-alpha.13:
-    resolution: {integrity: sha512-jakStdR47vBW2zuZuRprrMFe+mz6coAufaTArNid3SdvyqwfzWT5QnTR0iM3LDVDChBrpVCreEqxwc0669sUwg==}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /sqlite-vss-darwin-x64@0.1.1-alpha.13:
-    resolution: {integrity: sha512-DI0Yoiw7NwiHuQSmXy7T1iRaE97MzAhtTFdnOwQevJahSr6ojziwsdZEuvfwjPP/hpL1xcVazsJBwXdSnAgypg==}
-    cpu: [x64]
-    os: [darwin]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /sqlite-vss-linux-x64@0.1.1-alpha.13:
-    resolution: {integrity: sha512-+dDOvhiFQoXrecSqrh3dBTDO1ks43m0gS08agyBLEHByN/5mM7MzXltKBWf5oNsS9oZ6rsr2UzxQKZszs9hVmA==}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
-  /sqlite-vss@0.1.1-alpha.13:
-    resolution: {integrity: sha512-e932Qv2eaycaWI/k8cGvsKB++p6df9UHvNdw93vJM6AX/Uy/H2t764QE4a/CuJPi34W6VbtKXTXmGbQQP8dduw==}
-    optionalDependencies:
-      sqlite-vss-darwin-arm64: 0.1.1-alpha.13
-      sqlite-vss-darwin-x64: 0.1.1-alpha.13
-      sqlite-vss-linux-x64: 0.1.1-alpha.13
-    dev: false
 
   /sshpk@1.17.0:
     resolution: {integrity: sha512-/9HIEs1ZXGhSPE8X6Ccm7Nam1z8KcoCqPdI7ecm1N33EzAetWahvQWVqLZtaZQ+IDKX4IyA2o0gBzqIMkAagHQ==}

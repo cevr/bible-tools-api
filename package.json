@@ -34,7 +34,6 @@
     "execa": "^7.1.1",
     "fastify": "^4.17.0",
     "ftld": "^0.58.1",
-    "sqlite-vss": "0.1.1-alpha.13",
     "stream-json": "^1.8.0",
     "string-strip-html": "^13.4.1",
     "undici": "^5.22.1",
