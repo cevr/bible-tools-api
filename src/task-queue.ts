@@ -4,7 +4,7 @@ type Deferred<T> = {
   reject: (error: unknown) => void;
 };
 
-const defer = <T, _ = any>() => {
+const defer = <T>() => {
   let resolve: (value: T) => void;
   let reject: (error: unknown) => void;
   const promise = new Promise<T>((_resolve, _reject) => {
@@ -21,7 +21,7 @@ const TaskStatus = {
   Done: "done",
   Error: "error",
 } as const;
-type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
+type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus];
 
 type PendingTaskRecord<Result> = {
   data: {

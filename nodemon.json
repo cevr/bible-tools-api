@@ -1,0 +1,9 @@
+{
+  "watch": ["src", "./tsup.config.ts"],
+  "ext": "*",
+  "exec": "node --loader tsx --max-old-space-size=8192 ./src/index.ts",
+  "delay": 200,
+  "env": {
+    "NODE_ENV": "development"
+  }
+}

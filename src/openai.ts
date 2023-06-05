@@ -1,16 +1,39 @@
 import { File, FormData, request } from "undici";
 import { AsyncTask, Result, Task } from "ftld";
+import { z } from "zod";
 
-import { Embedding } from "./api";
 import { env } from "./env";
 import { log } from "./index";
 import { DomainError } from "./domain-error";
+import { wrapZod } from "./utils";
 
 class OpenAIEmbedFailedError extends DomainError {}
+class OpenAIEmbedNoEmbeddingError extends DomainError {}
 
-type NonEmptyArray<A> = [A, ...A[]];
+const embedResSchema = wrapZod(
+  z.object({
+    data: z
+      .array(
+        z.object({
+          embedding: z.array(z.number()).nonempty(),
+        })
+      )
+      .nonempty(),
+  })
+);
 
-function embed(text: string) {
+function embed(
+  text: string[]
+): AsyncTask<OpenAIEmbedFailedError | OpenAIEmbedNoEmbeddingError, number[][]>;
+function embed(
+  text: string
+): AsyncTask<OpenAIEmbedFailedError | OpenAIEmbedNoEmbeddingError, number[]>;
+function embed(
+  text: string | string[]
+): AsyncTask<
+  OpenAIEmbedFailedError | OpenAIEmbedNoEmbeddingError,
+  number[] | number[][]
+> {
   return Task.from(
     () =>
       request("https://api.openai.com/v1/embeddings", {
@@ -23,14 +46,29 @@ function embed(text: string) {
           input: text,
           model: "text-embedding-ada-002",
         }),
-      })
-        .then((res) => res.body.json())
-        .then((res) => res.data[0].embedding as Embedding),
+      }).then((res) => res.body.json()) as Promise<unknown>,
     (err) =>
       new OpenAIEmbedFailedError({
         meta: err,
       })
-  ).tapErr((e) => log.error(e));
+  )
+    .flatMap((res) =>
+      embedResSchema(
+        res,
+        (issues) =>
+          new OpenAIEmbedNoEmbeddingError({
+            meta: {
+              issues,
+              res,
+            },
+          })
+      ).map((res) =>
+        res.data.length === 1
+          ? res.data[0].embedding
+          : res.data.map((x) => x.embedding)
+      )
+    )
+    .tapErr((e) => log.error(e));
 }
 
 type Message = {
@@ -48,6 +86,20 @@ type OpenAIChatResponse = {
     };
   }[];
 };
+
+const chatResSchema = wrapZod(
+  z.object({
+    choices: z
+      .array(
+        z.object({
+          message: z.object({
+            content: z.string(),
+          }),
+        })
+      )
+      .nonempty(),
+  })
+);
 
 const countTokens = (str: string) => str.split(" ").length;
 
@@ -90,23 +142,27 @@ function chat(messages: (Message[] | Message)[]) {
     .tap((res) => log.info(res))
     .tapErr((e) => log.error(e))
     .flatMap((res) =>
-      Result.fromPredicate(
-        res.choices,
-        (
-          x
-        ): x is NonEmptyArray<
-          Required<OpenAIChatResponse>["choices"][number]
-        > => !!x && x.length > 0,
-        () =>
+      chatResSchema(
+        res,
+        (issues) =>
           new OpenAIChatNoChoicesError({
-            meta: res,
+            meta: {
+              issues,
+              res,
+            },
           })
-      ).map((x) => x[0].message.content)
+      ).map((x) => x.choices[0].message.content)
     );
 }
 
 class OpenAITranscribeFailedError extends DomainError {}
 class OpenAITranscribeNoTextError extends DomainError {}
+
+const transcribeResSchema = wrapZod(
+  z.object({
+    text: z.string().nonempty(),
+  })
+);
 
 function transcribe(audio: Buffer) {
   const formData = new FormData();
@@ -136,17 +192,19 @@ function transcribe(audio: Buffer) {
   )
     .tapErr((err) => log.error(err))
     .flatMap((res) =>
-      Result.fromPredicate(
-        res.text,
-        (x): x is NonNullable<typeof x> => !!x,
-        () => new OpenAITranscribeNoTextError()
+      transcribeResSchema(
+        res,
+        (issues) =>
+          new OpenAITranscribeNoTextError({
+            meta: { issues, res },
+          })
       )
     )
     .tap((res) => log.info(res))
     .tapErr((err) => log.error(err));
 }
 
-const maxTokens = 8192;
+const maxTokens = 8192 * 0.75;
 const chunk = (text: string) => {
   const words = text.split(" ");
   const chunks = [];

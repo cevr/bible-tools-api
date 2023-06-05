@@ -1,11 +1,11 @@
-import "dotenv/config";
 import Fastify from "fastify";
-import { Do, Result } from "ftld";
+import { Do } from "ftld";
 import * as z from "zod";
 
 import { BibleTools } from "./api";
-
 import { env } from "./env";
+import { wrapZod, fs, chunk } from "./utils";
+import { addEmbeddingsToDB } from "./embedding-tools";
 
 const pretty = {
   transport: {
@@ -34,23 +34,10 @@ fastify.get("/", (request, reply) => {
 
 // Declare a health check route
 fastify.get("/health", async (request, reply) => {
-  if (BibleTools.isLoading()) {
-    return reply.send({ ok: false }).status(500);
-  }
   return reply.send({ ok: true }).status(200);
 });
 
-const schemaToResult =
-  <T extends z.Schema>(schema: T) =>
-  <A, _>(value: A): Result<z.ZodIssue[], z.infer<T>> => {
-    const res = schema.safeParse(value);
-    if (res.success) {
-      return Result.Ok(res.data);
-    }
-    return Result.Err(res.error.errors);
-  };
-
-const searchSchema = schemaToResult(
+const searchSchema = wrapZod(
   z.object({
     q: z.string(),
   })
@@ -75,12 +62,11 @@ fastify.get("/search", async (req, reply) => {
     .run();
 });
 
-const transcribeSchema = schemaToResult(
+const transcribeSchema = wrapZod(
   z.object({
     url: z.string().url(),
   })
 );
-
 fastify.get("/transcribe", async (req, reply) => {
   await Do(function* ($) {
     const { url } = yield* $(transcribeSchema(req.query));
@@ -102,7 +88,11 @@ fastify.get("/transcribe", async (req, reply) => {
   });
 });
 
-env.NODE_ENV !== "development" && BibleTools.preload();
+fastify.get("/db", async (req, reply) => {
+  await addEmbeddingsToDB()
+    .tapErr((err) => log.error(err))
+    .run();
+});
 
 // Run the server!
 fastify.listen(
