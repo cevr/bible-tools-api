@@ -1,41 +1,37 @@
-import path from "path";
 import * as lancedb from "vectordb";
 import { DomainError } from "./domain-error";
 import { Do, Task } from "ftld";
 
 const tableName = "writings";
 
-const db = await lancedb.connect("s3://bible-tools-writings");
+let db: lancedb.Connection;
+
+const connectToDb = () =>
+  Task.from(
+    async () => {
+      if (db) {
+        return db;
+      }
+      const connection = await lancedb.connect("s3://bible-tools-writings");
+      db = connection;
+      return db;
+    },
+    (e) => new CouldNotConnectToDbError({ meta: e })
+  );
 
 export type VectorWriting = {
   vector: number[];
   id: string;
 };
 
-class CouldNotGetVectorTablesError extends DomainError {}
+class CouldNotConnectToDbError extends DomainError {}
 class CouldNotGetVectorTableError extends DomainError {}
 class CouldNotInsertVectorsError extends DomainError {}
+class VectorSearchFailedError extends DomainError {}
 
-export const insertWritings = (paragraphs: VectorWriting[]) => {
+const insertWritings = (paragraphs: VectorWriting[]) => {
   return Do(function* ($) {
-    const tables = yield* $(
-      Task.from(
-        () => db.tableNames(),
-        (e) =>
-          new CouldNotGetVectorTablesError({
-            meta: e,
-          })
-      )
-    );
-    if (!tables.includes(tableName)) {
-      yield* $(
-        Task.from(
-          () => db.createTable(tableName, paragraphs),
-          (e) => new CouldNotInsertVectorsError({ meta: e })
-        )
-      );
-      return;
-    }
+    const db = yield* $(connectToDb());
 
     const table = yield* $(
       Task.from(
@@ -54,15 +50,19 @@ export const insertWritings = (paragraphs: VectorWriting[]) => {
 
 const search = (q: number[], limit = 10) => {
   return Do(function* ($) {
-    const table = yield* $(db.openTable(tableName));
+    const db = yield* $(connectToDb());
+    const table = yield* $(
+      db.openTable(tableName),
+      (e) => new CouldNotGetVectorTableError({ meta: e })
+    );
     const results = yield* $(
-      table.search(q).limit(limit).execute<VectorWriting>()
+      table.search(q).limit(limit).execute<VectorWriting>(),
+      (e) => new VectorSearchFailedError({ meta: e })
     );
     return results;
   });
 };
 
 export const vectorDb = {
-  insertWritings,
   search,
 };

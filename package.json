@@ -18,7 +18,7 @@
     "@types/better-sqlite3": "^7.6.4",
     "@types/node": "^20.2.5",
     "@types/stream-json": "^1.7.3",
-    "dotenv": "^16.1.3",
+    "dotenv": "^16.1.4",
     "drizzle-kit": "^0.18.1",
     "ffbinaries": "^1.1.5",
     "nodemon": "^2.0.22",
@@ -33,7 +33,7 @@
     "drizzle-zod": "^0.4.3",
     "execa": "^7.1.1",
     "fastify": "^4.17.0",
-    "ftld": "^0.58.1",
+    "ftld": "^0.58.3",
     "stream-json": "^1.8.0",
     "string-strip-html": "^13.4.1",
     "undici": "^5.22.1",
@@ -44,5 +44,5 @@
   "engines": {
     "node": "18"
   },
-  "packageManager": "pnpm@8.6.0"
+  "packageManager": "pnpm@8.6.1"
 }
