@@ -7,7 +7,7 @@ import { log } from "./index";
 import { DomainError } from "./domain-error";
 import { OpenAI } from "./openai";
 import { fs, chunkByByteLength, chunk } from "./utils";
-import { VectorWriting, insertWritings } from "./vector-db";
+import { VectorWriting, vectorDb } from "./vector-db";
 
 type ParsedBookParagraph = {
   content: string;
@@ -16,22 +16,10 @@ type ParsedBookParagraph = {
   embedding: number[];
 };
 
-class ReadEgwEmbeddingsError extends DomainError {}
-class ReadEgwDirectoryError extends DomainError {}
-class ReadEgwBookError extends DomainError {}
-class ParseEgwBookError extends DomainError {}
-class WriteEmbeddedEgwBookError extends DomainError {}
-class DeleteFailedEmbeddingsError extends DomainError {}
-class FailedDbWriteError extends DomainError {}
-class FailedDbGetTableError extends DomainError {}
-
 const skip = Symbol("skip");
 
 // 25 MB
 const maxJsonSize = 25 * 1024 * 1024;
-
-// todo: replace all the split embedded files wiht new ones
-// just search for any files that have _{number}
 
 function embedIndividualParagraphs() {
   return Do(function* ($) {
@@ -214,7 +202,7 @@ function embedChunkedParagraphs() {
   });
 }
 
-export function addEmbeddingsToDB() {
+function addEmbeddingsToDB() {
   return Do(function* ($) {
     const embeddingsDir = path.resolve(process.cwd(), "../cms/embeddings/egw");
 
@@ -250,7 +238,7 @@ export function addEmbeddingsToDB() {
 
               stream.on("end", async () => {
                 log.info(`${code} - Writing to db`);
-                await insertWritings(writings).run();
+                await vectorDb.insertWritings(writings).run();
                 log.info(`${code} - wrote ${writings.length} paragraphs to db`);
                 writings = [];
                 res();

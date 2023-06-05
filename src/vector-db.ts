@@ -64,5 +64,6 @@ const search = (q: number[], limit = 10) => {
 };
 
 export const vectorDb = {
+  insertWritings,
   search,
 };

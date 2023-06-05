@@ -4,8 +4,7 @@ import * as z from "zod";
 
 import { BibleTools } from "./api";
 import { env } from "./env";
-import { wrapZod, fs, chunk } from "./utils";
-import { addEmbeddingsToDB } from "./embedding-tools";
+import { wrapZod } from "./utils";
 
 const pretty = {
   transport: {
@@ -86,12 +85,6 @@ fastify.get("/transcribe", async (req, reply) => {
         .status(500);
     },
   });
-});
-
-fastify.get("/db", async (req, reply) => {
-  await addEmbeddingsToDB()
-    .tapErr((err) => log.error(err))
-    .run();
 });
 
 // Run the server!
