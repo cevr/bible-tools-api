@@ -10,6 +10,7 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string(),
   EGW_CLIENT_ID: z.string(),
   EGW_CLIENT_SECRET: z.string(),
+  LANCEDB_URI: z.string(),
 });
 
 export type Env = z.infer<typeof envSchema>;

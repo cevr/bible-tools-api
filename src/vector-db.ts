@@ -1,6 +1,7 @@
 import * as lancedb from "vectordb";
 import { DomainError } from "./domain-error";
 import { Do, Task } from "ftld";
+import { env } from "./env";
 
 const tableName = "writings";
 
@@ -12,7 +13,7 @@ const connectToDb = () =>
       if (db) {
         return db;
       }
-      const connection = await lancedb.connect("s3://bible-tools-writings");
+      const connection = await lancedb.connect(env.LANCEDB_URI);
       db = connection;
       return db;
     },
