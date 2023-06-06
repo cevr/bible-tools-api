@@ -1,7 +1,7 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
-import { InferModel, eq, sql, and, or } from "drizzle-orm";
+import { InferModel, eq, sql, and, or, between } from "drizzle-orm";
 import path from "path";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 
@@ -26,57 +26,38 @@ export function insertWritings(paragraphs: Writing[]) {
 }
 
 function getWritingAndContext(id: string) {
-  const main = source.select().from(writings).where(eq(writings.id, id));
-  return {
-    writing: main.get(),
-    context: source
-      .select()
-      .from(writings)
-      .where(
-        or(
-          and(
-            eq(
-              writings.book,
-              source
-                .select({
-                  book: writings.book,
-                })
-                .from(writings)
-                .where(eq(writings.id, id))
-            ),
-            eq(
-              writings.order,
-              sql`(${source
-                .select({
-                  order: writings.order,
-                })
-                .from(writings)
-                .where(eq(writings.id, id))} - 1)`
-            )
-          ),
-          and(
-            eq(
-              writings.book,
-              source
-                .select({
-                  book: writings.book,
-                })
-                .from(writings)
-                .where(eq(writings.id, id))
-            ),
-            eq(
-              writings.order,
-              sql`(${source
-                .select({
-                  order: writings.order,
-                })
-                .from(writings)
-                .where(eq(writings.id, id))} + 1)`
-            )
-          )
+  const orderById = source
+    .select({
+      order: writings.order,
+    })
+    .from(writings)
+    .where(eq(writings.id, id));
+  const records = source
+    .select()
+    .from(writings)
+    .where(
+      and(
+        eq(
+          writings.book,
+          source
+            .select({
+              book: writings.book,
+            })
+            .from(writings)
+            .where(eq(writings.id, id))
+        ),
+        between(
+          writings.order,
+          sql`(${orderById}) - 2`,
+          sql`(${orderById}) + 2`
         )
       )
-      .all(),
+    )
+    .all();
+
+  return {
+    writing: records.find((writing) => writing.id === id)!,
+    context: records.filter((writing) => writing.id !== id),
   };
 }
 
@@ -84,5 +65,5 @@ export const db = {
   raw: source,
   insertWritings,
   writings,
-  getContext: getWritingAndContext,
+  getWritingAndContext,
 };

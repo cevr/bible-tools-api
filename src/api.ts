@@ -8,17 +8,21 @@ import { OpenAI } from "./openai";
 import { DomainError } from "./domain-error";
 import { log } from "./index";
 import { vectorDb } from "./vector-db";
-import { db } from "./db";
+import { Writing, db } from "./db";
+
+type SearchResult = {
+  writing: Writing;
+  context: Writing[];
+};
 
 function search(query: string) {
   return Do(function* ($) {
-    const data = yield* $(OpenAI.embed(query));
-    const results = yield* $(vectorDb.search(data));
-    const writings = results
-      .map((result) => result.id)
-      .map((id) => db.getContext(id));
-
-    return writings;
+    const embeddedQuery = yield* $(OpenAI.embed(query));
+    const results = yield* $(vectorDb.search(embeddedQuery));
+    const data = results.map(
+      (writing) => db.getWritingAndContext(writing.id) as SearchResult
+    );
+    return data;
   });
 }
 

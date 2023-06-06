@@ -17,7 +17,7 @@ const connectToDb = () =>
       db = connection;
       return db;
     },
-    (e) => new CouldNotConnectToDbError({ meta: e })
+    (e) => new VectorDbCouldNotConnect({ meta: e })
   );
 
 export type VectorWriting = {
@@ -25,10 +25,10 @@ export type VectorWriting = {
   id: string;
 };
 
-class CouldNotConnectToDbError extends DomainError {}
-class CouldNotGetVectorTableError extends DomainError {}
-class CouldNotInsertVectorsError extends DomainError {}
-class VectorSearchFailedError extends DomainError {}
+class VectorDbCouldNotConnect extends DomainError {}
+class VectorDbCouldNotGetTable extends DomainError {}
+class VectorDbCouldNotInsert extends DomainError {}
+class VectorDbCouldNotSearch extends DomainError {}
 
 const insertWritings = (paragraphs: VectorWriting[]) => {
   return Do(function* ($) {
@@ -37,13 +37,13 @@ const insertWritings = (paragraphs: VectorWriting[]) => {
     const table = yield* $(
       Task.from(
         () => db.openTable(tableName),
-        (e) => new CouldNotGetVectorTableError({ meta: e })
+        (e) => new VectorDbCouldNotGetTable({ meta: e })
       )
     );
     yield* $(
       Task.from(
         () => table.add(paragraphs),
-        (e) => new CouldNotInsertVectorsError({ meta: e })
+        (e) => new VectorDbCouldNotInsert({ meta: e })
       )
     );
   });
@@ -54,11 +54,11 @@ const search = (q: number[], limit = 10) => {
     const db = yield* $(connectToDb());
     const table = yield* $(
       db.openTable(tableName),
-      (e) => new CouldNotGetVectorTableError({ meta: e })
+      (e) => new VectorDbCouldNotGetTable({ meta: e })
     );
     const results = yield* $(
       table.search(q).limit(limit).execute<VectorWriting>(),
-      (e) => new VectorSearchFailedError({ meta: e })
+      (e) => new VectorDbCouldNotSearch({ meta: e })
     );
     return results;
   });
