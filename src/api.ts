@@ -7,8 +7,8 @@ import { execa } from "execa";
 import { OpenAI } from "./openai";
 import { DomainError } from "./domain-error";
 import { log } from "./index";
-import { vectorDb } from "./vector-db";
-import { Writing, db } from "./db";
+// import { vectorDb } from "./vector-db";
+import type { Writing } from "./db";
 
 type SearchResult = {
   writing: Writing;
@@ -16,14 +16,15 @@ type SearchResult = {
 };
 
 function search(query: string) {
-  return Do(function* ($) {
-    const embeddedQuery = yield* $(OpenAI.embed(query));
-    const results = yield* $(vectorDb.search(embeddedQuery));
-    const data = results.map(
-      (writing) => db.getWritingAndContext(writing.id) as SearchResult
-    );
-    return data;
-  });
+  return Task.from(() => []);
+  // return Do(function* ($) {
+  //   const embeddedQuery = yield* $(OpenAI.embed(query));
+  //   const results = yield* $(vectorDb.search(embeddedQuery));
+  //   const data = results.map(
+  //     (writing) => db.getWritingAndContext(writing.id) as SearchResult
+  //   );
+  //   return data;
+  // });
 }
 
 class YoutubeDownloadJSONFailedError extends DomainError {}
