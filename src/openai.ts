@@ -191,7 +191,8 @@ function transcribe(audio: Buffer) {
     .tapErr((err) => log.error(err));
 }
 
-const maxTokens = 8192 * 0.75;
+const maxTokens = (8192 * 2) * 0.75;
+
 const chunk = (text: string) => {
   const words = text.split(" ");
   const chunks = [];
