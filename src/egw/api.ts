@@ -107,7 +107,7 @@ const request = <T>({
 }) =>
   Do(function* ($) {
     const token = yield* $(getToken().tapErr((e) => log.error(e)));
-    log.info(`got token: ${token.slice(0, 5).concat("...")}`);
+    // log.info(`got token: ${token.slice(0, 5).concat("...")}`);
     const url = `https://a.egwwritings.org/${path}`;
     const response = yield* $(
       makeRequest<T>(url, {
@@ -119,7 +119,7 @@ const request = <T>({
         },
       }).tapErr((e) => log.error(e))
     );
-    log.info(response, "got response");
+    // log.info(response, "got response");
     return response;
   });
 /**

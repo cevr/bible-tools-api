@@ -108,19 +108,6 @@ class MaximumTokensExceededError extends DomainError {}
 function chat(messages: (Message[] | Message)[]) {
   return Task.from(
     async () => {
-      const totalTokens = messages
-        .flat()
-        .reduce((total, message) => total + countTokens(message.content), 0);
-      if (totalTokens > maxTokens) {
-        return Result.Err(
-          new MaximumTokensExceededError({
-            meta: {
-              totalTokens,
-              maxTokens,
-            },
-          })
-        );
-      }
       return request("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -128,7 +115,7 @@ function chat(messages: (Message[] | Message)[]) {
           Authorization: `Bearer ${env.OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "gpt-4",
+          model: "gpt-3.5-turbo-16k",
           messages: messages.flat(),
           temperature: 0.2,
         }),
