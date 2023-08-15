@@ -186,8 +186,6 @@ Be aware that the transcript may contain errors. If you notice any errors, pleas
 Requirements:
 - Provide a summary of the video
 - Provide a list of key points for the video
-- Provide a study guide for the video
-- Provide a list of questions for the video
 
 Example:
 ---
@@ -198,11 +196,6 @@ Summary:
 {{summary}}
 Key Points:
 - {{key_point_1}}
-...
-Study Guide:
-{{study_guide}}
-Questions:
-- {{question_1}}
 ...`;
 
 const transcriptionChunkPrompt = (
@@ -228,11 +221,6 @@ Summary:
 Key Points:
 - {{key_point_1}}
 ...
-Study Guide:
-{{study_guide}}
-Questions:
-- {{question_1}}
-...
 --
 Encoded Response:
 {{encoded_response}}
@@ -243,7 +231,6 @@ Requirements:
 - Merge the chunks into a single study guide
 - Decode the study guide into a language that can be understood by others
 - Ensure that the study guide is coherent and understandable
-- Merge all the questions into a single list of questions
 - Merge all the key points into a single list of key points
 - Merge all the summaries into a single summary
 
@@ -256,11 +243,6 @@ Summary:
 {{summary}}
 Key Points:
 - {{key_point_1}}
-...
-Study Guide:
-{{study_guide}}
-Questions:
-- {{question_1}}
 ...
 `;
 
