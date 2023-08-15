@@ -27,14 +27,11 @@ function search(query: string) {
   // });
 }
 
-class YoutubeDownloadJSONFailedError extends DomainError {}
-class YoutubeSaveJSONFailedError extends DomainError {}
 class YoutubeDownloadFailedError extends DomainError {}
 class ChunkVideoFailedError extends DomainError {}
 class ReadChunkDirFailedError extends DomainError {}
 class ReadChunksFailedError extends DomainError {}
 class ReadVideoFailedError extends DomainError {}
-class ConvertVideoFailedError extends DomainError {}
 
 type TranscriptionResponse = {
   summary: string;
@@ -48,7 +45,6 @@ function summaryTranscription(url: string) {
     const now = Date.now();
     const chunkDir = path.resolve(audioPath, `${id}-${now}`);
     const mp3Filename = path.resolve(audioPath, `${id}-${now}.mp3`);
-    const jsonFilename = path.resolve(audioPath, `${id}-${now}.json`);
     log.info(`Downloading video: ${url}`);
 
     const json = yield* $(
@@ -58,8 +54,9 @@ function summaryTranscription(url: string) {
             audioFormat: 'mp3',
             extractAudio: true,
             printJson: true,
+            output: mp3Filename,
           }),
-        (e) => new YoutubeDownloadJSONFailedError({ meta: { url, error: e } }),
+        (e) => new YoutubeDownloadFailedError({ meta: { url, error: e } }),
       ),
     );
 
@@ -133,7 +130,6 @@ function summaryTranscription(url: string) {
 
     fs.rm(chunkDir, { recursive: true, force: true });
     fs.rm(mp3Filename, { force: true });
-    fs.rm(jsonFilename, { force: true });
 
     log.info(`transcribing video`);
 
