@@ -1,48 +1,56 @@
 {
-  "name": "bible-tools",
-  "version": "1.0.0",
-  "description": "",
-  "module": "dist/index.js",
-  "type": "module",
-  "scripts": {
-    "binaries": "ffbinaries ffmpeg",
-    "build": "tsup",
-    "dev": "nodemon",
-    "start": "node --max-old-space-size=8192 --enable-source-maps dist/index.js",
-    "gen": "drizzle-kit generate:sqlite --out migrations --schema src/db.ts"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/better-sqlite3": "^7.6.4",
-    "@types/node": "^20.5.0",
-    "@types/stream-json": "^1.7.3",
-    "dotenv": "^16.3.1",
-    "drizzle-kit": "^0.19.12",
-    "ffbinaries": "^1.1.5",
-    "nodemon": "^3.0.1",
-    "pino-pretty": "^10.2.0",
-    "tsup": "^7.2.0",
-    "tsx": "^3.12.7",
-    "typescript": "^5.1.6"
-  },
-  "dependencies": {
-    "better-sqlite3": "^8.5.0",
-    "drizzle-orm": "^0.28.2",
-    "drizzle-zod": "^0.5.0",
-    "execa": "^7.2.0",
-    "fastify": "^4.21.0",
-    "ftld": "^0.63.4",
-    "stream-json": "^1.8.0",
-    "string-strip-html": "^13.4.2",
-    "undici": "^5.23.0",
-    "vectordb": "^0.2.0",
-    "youtube-dl-exec": "^2.4.7",
-    "zod": "^3.21.4"
-  },
-  "engines": {
-    "node": "18"
-  },
-  "packageManager": "pnpm@8.6.12"
+    "name": "bible-tools",
+    "version": "1.0.0",
+    "description": "",
+    "module": "dist/index.js",
+    "type": "module",
+    "scripts": {
+        "binaries": "ffbinaries ffmpeg",
+        "build": "tsup",
+        "dev": "nodemon",
+        "start": "node --max-old-space-size=8192 --enable-source-maps dist/index.js",
+        "gen": "drizzle-kit generate:sqlite --out migrations --schema src/db.ts"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/better-sqlite3": "^7.6.4",
+        "@types/node": "^20.5.0",
+        "@types/stream-json": "^1.7.3",
+        "dotenv": "^16.3.1",
+        "drizzle-kit": "^0.19.12",
+        "ffbinaries": "^1.1.5",
+        "nodemon": "^3.0.1",
+        "pino-pretty": "^10.2.0",
+        "prettier": "^3.0.1",
+        "tsup": "^7.2.0",
+        "tsx": "^3.12.7",
+        "typescript": "^5.1.6"
+    },
+    "dependencies": {
+        "better-sqlite3": "^8.5.0",
+        "drizzle-orm": "^0.28.2",
+        "drizzle-zod": "^0.5.0",
+        "execa": "^7.2.0",
+        "fastify": "^4.21.0",
+        "ftld": "^0.63.4",
+        "stream-json": "^1.8.0",
+        "string-strip-html": "^13.4.2",
+        "undici": "^5.23.0",
+        "vectordb": "^0.2.0",
+        "youtube-dl-exec": "^2.4.7",
+        "zod": "^3.21.4"
+    },
+    "engines": {
+        "node": "18"
+    },
+    "packageManager": "pnpm@8.6.12",
+    "prettier": {
+        "trailingComma": "all",
+        "tabWidth": 2,
+        "useTabs": false,
+        "semi": true,
+        "singleQuote": true
+    }
 }

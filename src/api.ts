@@ -1,14 +1,14 @@
-import { Result, Task, Do } from "ftld";
-import ytdl from "youtube-dl-exec";
-import path from "path";
-import { promises as fs } from "fs";
-import { execa } from "execa";
+import { Result, Task, Do } from 'ftld';
+import ytdl from 'youtube-dl-exec';
+import path from 'path';
+import { promises as fs } from 'fs';
+import { execa } from 'execa';
 
-import { OpenAI } from "./openai";
-import { DomainError } from "./domain-error";
-import { log } from "./index";
+import { OpenAI } from './openai';
+import { DomainError } from './domain-error';
+import { log } from './index';
 // import { vectorDb } from "./vector-db";
-import type { Writing } from "./db";
+import type { Writing } from './db';
 
 type SearchResult = {
   writing: Writing;
@@ -43,22 +43,21 @@ type TranscriptionResponse = {
 
 function summaryTranscription(url: string) {
   return Do(function* ($) {
-    const audioPath = path.resolve(process.cwd(), "tmp", "audio");
-    const id = url.split("v=")[1];
+    const audioPath = path.resolve(process.cwd(), 'tmp', 'audio');
+    const id = url.split('v=')[1];
     const now = Date.now();
     const chunkDir = path.resolve(audioPath, `${id}-${now}`);
-    const filename = path.resolve(audioPath, `${id}-${now}.m4a`);
     const mp3Filename = path.resolve(audioPath, `${id}-${now}.mp3`);
     const jsonFilename = path.resolve(audioPath, `${id}-${now}.json`);
     const json = yield* $(
       Task.from(
         () =>
           ytdl(url, {
-            format: "ba",
+            format: 'mp3',
             dumpSingleJson: true,
           }),
-        (e) => new YoutubeDownloadJSONFailedError({ meta: { url, error: e } })
-      )
+        (e) => new YoutubeDownloadJSONFailedError({ meta: { url, error: e } }),
+      ),
     );
 
     yield* $(
@@ -67,51 +66,32 @@ function summaryTranscription(url: string) {
           await fs.mkdir(path.dirname(jsonFilename), { recursive: true });
           await fs.writeFile(jsonFilename, JSON.stringify(json));
         },
-        (e) => new YoutubeSaveJSONFailedError({ meta: { url, error: e } })
-      )
+        (e) => new YoutubeSaveJSONFailedError({ meta: { url, error: e } }),
+      ),
     );
 
     yield* $(
       Task.from(
         async () => {
-          await ytdl.exec("", {
-            format: "ba",
+          await ytdl.exec('', {
+            format: 'mp3',
             loadInfoJson: jsonFilename,
-            output: filename,
+            output: mp3Filename,
           });
         },
-        (e) => new YoutubeDownloadFailedError({ meta: { url, error: e } })
-      )
+        (e) => new YoutubeDownloadFailedError({ meta: { url, error: e } }),
+      ),
     );
 
     log.info(`Downloaded video: ${url}`);
-
-    yield* $(
-      Task.from(
-        async () => {
-          await execa(path.resolve(process.cwd(), "ffmpeg"), [
-            "-i",
-            filename,
-            "-vn",
-            "-c:a",
-            "libmp3lame",
-            "-q:a",
-            "2",
-            mp3Filename,
-          ]);
-          return json;
-        },
-        (e) => new ConvertVideoFailedError({ meta: { url, error: e } })
-      )
-    );
 
     log.info(`Converted video to mp3: ${url}`);
 
     const buffer = yield* $(
       Task.from(
         () => fs.readFile(mp3Filename),
-        (e) => new ReadVideoFailedError({ meta: { filename, error: e } })
-      )
+        (e) => new ReadVideoFailedError({ meta: { mp3Filename, error: e } }),
+      ),
     );
 
     yield* $(
@@ -126,20 +106,20 @@ function summaryTranscription(url: string) {
           const chunkDuration = Math.ceil(duration / numChunks);
           log.info(`Read video: ${mp3Filename}, ${buffer.length / 1000000} MB`);
           await fs.mkdir(chunkDir, { recursive: true });
-          await execa(path.resolve(process.cwd(), "ffmpeg"), [
-            "-i",
+          await execa(path.resolve(process.cwd(), 'ffmpeg'), [
+            '-i',
             mp3Filename,
-            "-f",
-            "segment",
-            "-segment_time",
+            '-f',
+            'segment',
+            '-segment_time',
             `${chunkDuration}`,
-            "-c",
-            "copy",
-            path.resolve(chunkDir, "%03d.mp3"),
+            '-c',
+            'copy',
+            path.resolve(chunkDir, '%03d.mp3'),
           ]);
         },
-        (e) => new ChunkVideoFailedError({ meta: { filename, error: e } })
-      )
+        (e) => new ChunkVideoFailedError({ meta: { mp3Filename, error: e } }),
+      ),
     );
     log.info(`Chunked video: ${mp3Filename}`);
 
@@ -148,16 +128,16 @@ function summaryTranscription(url: string) {
         async () => {
           const files = await fs.readdir(chunkDir);
           return files
-            .filter((file) => file.endsWith(".mp3"))
+            .filter((file) => file.endsWith('.mp3'))
             .map((file) => path.resolve(chunkDir, file))
             .sort((a, b) => {
-              const aNum = parseInt(a.split(".")[0]);
-              const bNum = parseInt(b.split(".")[0]);
+              const aNum = parseInt(a.split('.')[0]);
+              const bNum = parseInt(b.split('.')[0]);
               return aNum - bNum;
             });
         },
-        (error) => new ReadChunkDirFailedError({ meta: { chunkDir, error } })
-      )
+        (error) => new ReadChunkDirFailedError({ meta: { chunkDir, error } }),
+      ),
     );
 
     const chunks = yield* $(
@@ -165,26 +145,26 @@ function summaryTranscription(url: string) {
         files.map((file) =>
           Task.from(
             () => fs.readFile(file),
-            () => new ReadChunksFailedError({ meta: { file } })
-          )
-        )
-      )
+            () => new ReadChunksFailedError({ meta: { file } }),
+          ),
+        ),
+      ),
     );
 
     log.info(`Read chunks: ${files.length} chunks`);
 
     fs.rm(chunkDir, { recursive: true, force: true });
-    fs.rm(filename, { force: true });
+    fs.rm(mp3Filename, { force: true });
     fs.rm(jsonFilename, { force: true });
 
     log.info(`transcribing video`);
 
     const transcription = yield* $(
       Task.parallel(chunks.map(OpenAI.transcribe)).map((transcriptions) =>
-        transcriptions.join(" ")
-      )
+        transcriptions.map((x) => x.text).join(' '),
+      ),
     );
-    log.info(`Transcribed video: ${filename}`);
+    log.info(`Transcribed video: ${mp3Filename}`);
 
     const summaryChunks = OpenAI.chunk(transcription);
     if (summaryChunks.length === 1) {
@@ -196,7 +176,7 @@ function summaryTranscription(url: string) {
           ({
             transcription,
             summary,
-          } as TranscriptionResponse)
+          }) as TranscriptionResponse,
       );
     }
     const responses = yield* $(
@@ -204,17 +184,17 @@ function summaryTranscription(url: string) {
         OpenAI.chunk(transcription).map((chunked) =>
           OpenAI.chat([
             OpenAI.chat.makeSystemMessage(
-              transcriptionChunkPrompt(chunks.length)
+              transcriptionChunkPrompt(chunks.length),
             ),
             OpenAI.chat.makeUserMessage(chunked),
-          ])
-        )
-      )
+          ]),
+        ),
+      ),
     );
 
     return OpenAI.chat([
       OpenAI.chat.makeSystemMessage(JoinChunksPrompt),
-      OpenAI.chat.makeUserMessage(responses.join("\n")),
+      OpenAI.chat.makeUserMessage(responses.join('\n')),
     ]).map((summary) => ({
       transcription,
       summary,
@@ -248,7 +228,7 @@ Questions:
 ...`;
 
 const transcriptionChunkPrompt = (
-  parts: number
+  parts: number,
 ) => `You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript, provide all the key points, and a study guide for the video.
 This transcript has been split into ${parts} parts. You will be given a part of the transcript to summarize.
 
