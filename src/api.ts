@@ -176,7 +176,7 @@ function summaryTranscription(url: string) {
   });
 }
 
-const transcriptionNoChunkPrompt = `You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript, provide all the key points, and a study guide for the video.
+const transcriptionNoChunkPrompt = `You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript and provide all the key points for the video.
 Be aware that the transcript may contain errors. If you notice any errors, please correct them.
 
 Requirements:
@@ -185,8 +185,7 @@ Requirements:
 
 Example:
 ---
-Transcript: {{transcript}}
-Response:
+{{transcript}}
 ---
 Summary:
 {{summary}}
@@ -196,14 +195,12 @@ Key Points:
 
 const transcriptionChunkPrompt = (
   parts: number,
-) => `You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript, provide all the key points, and a study guide for the video.
+) => `You are a study helper. You will be given a transcript of audio for an educational video. Your task is to summarize the transcript and provide all the key points.
 This transcript has been split into ${parts} parts. You will be given a part of the transcript to summarize.
 
 Requirements:
 - Provide a summary of the video
 - Provide a list of key points for the video
-- Provide a study guide for the video
-- Provide a list of questions for the video
 - The output must be as short as possible
 - The output must be in a format only you can understand
 - The output must be in a format that can be decoded later
