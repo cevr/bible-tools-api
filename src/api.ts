@@ -49,34 +49,21 @@ function summaryTranscription(url: string) {
     const chunkDir = path.resolve(audioPath, `${id}-${now}`);
     const mp3Filename = path.resolve(audioPath, `${id}-${now}.mp3`);
     const jsonFilename = path.resolve(audioPath, `${id}-${now}.json`);
-    const [json] = yield* $(
-      Task.parallel([
-        Task.from(
-          () =>
-            ytdl(url, {
-              audioFormat: 'mp3',
-              extractAudio: true,
-              dumpSingleJson: true,
-            }),
-          (e) =>
-            new YoutubeDownloadJSONFailedError({ meta: { url, error: e } }),
-        ),
-        Task.from(
-          async () => {
-            return ytdl(url, {
-              audioFormat: 'mp3',
-              extractAudio: true,
-              output: mp3Filename,
-            });
-          },
-          (e) => new YoutubeDownloadFailedError({ meta: { url, error: e } }),
-        ),
-      ]),
+    log.info(`Downloading video: ${url}`);
+
+    const json = yield* $(
+      Task.from(
+        () =>
+          ytdl(url, {
+            audioFormat: 'mp3',
+            extractAudio: true,
+            printJson: true,
+          }),
+        (e) => new YoutubeDownloadJSONFailedError({ meta: { url, error: e } }),
+      ),
     );
 
     log.info(`Downloaded video: ${url}`);
-
-    log.info(`Converted video to mp3: ${url}`);
 
     const buffer = yield* $(
       Task.from(
@@ -88,7 +75,7 @@ function summaryTranscription(url: string) {
     yield* $(
       Task.from(
         async () => {
-          const duration = (json as any).duration;
+          const duration = json.duration;
           const bufferSize = buffer.length;
           const chunkSize = 20 * 1000 * 1000; // 20 MB
           // calculate the number of chunks based on the size and duration
